@@ -17,14 +17,15 @@ const STORES = {
 
 let db;
 
-// Profilo Irida (precaricato al primo avvio)
+// Default profilo: generici. I dati reali si impostano al primo avvio
+// tramite il modal Setup e si salvano in IndexedDB sul dispositivo.
 const PROFILE_DEFAULTS = {
-  name: "Irida",
-  dob: "1979-07-14",   // 46 anni nel 2026
-  height: 160,          // cm
+  name: "",
+  dob: "",
+  height: 165,
   gender: "F",
-  startWeight: 74,      // peso di partenza
-  startDate: "2026-05-17",
+  startWeight: null,
+  startDate: "",
 };
 
 // Integratori monitorati (uno solo per ora — facile estendere)
@@ -223,17 +224,47 @@ function bmiHealthyWeightRange(heightCm) {
   return { min: +(18.5 * m * m).toFixed(1), max: +(24.9 * m * m).toFixed(1) };
 }
 
-// First-run: pre-popola il peso di partenza se non c'e' alcun peso
-async function seedFirstRun() {
-  const seeded = await getConfig("seeded.v1", false);
-  if (seeded) return;
-  const weights = await getAll(STORES.weight);
-  if (!weights.length) {
-    const profile = await getProfile();
-    const ts = new Date(profile.startDate).getTime();
-    await put(STORES.weight, { ts, kg: profile.startWeight });
+// First-run: se il profilo non e' configurato, mostra il Setup.
+// Quando l'utente salva il Setup, registra il peso di partenza come prima misura.
+async function maybeShowSetup() {
+  const profile = await getProfile();
+  if (profile.name && profile.dob && profile.startWeight) return false;
+  document.getElementById("setupModal").classList.remove("hidden");
+  // Pre-compila la data di oggi come start
+  const today = dateKey(new Date());
+  const sd = document.getElementById("setupStartDate");
+  if (sd && !sd.value) sd.value = today;
+  return true;
+}
+
+async function saveSetup() {
+  const name = document.getElementById("setupName").value.trim();
+  const dob = document.getElementById("setupDob").value;
+  const height = parseInt(document.getElementById("setupHeight").value) || 165;
+  const startWeight = parseFloat(document.getElementById("setupStartWeight").value);
+  const startDate = document.getElementById("setupStartDate").value || dateKey(new Date());
+
+  if (!name || !dob || !startWeight) {
+    alert("Compila almeno nome, data di nascita e peso di partenza.");
+    return;
   }
-  await setConfig("seeded.v1", true);
+
+  await setConfig("profile.name", name);
+  await setConfig("profile.dob", dob);
+  await setConfig("profile.height", height);
+  await setConfig("profile.startWeight", startWeight);
+  await setConfig("profile.startDate", startDate);
+
+  // Pre-carica il peso di partenza come prima misurazione
+  const existing = await getAll(STORES.weight);
+  if (!existing.length) {
+    const ts = new Date(startDate).getTime();
+    await put(STORES.weight, { ts, kg: startWeight });
+  }
+
+  document.getElementById("setupModal").classList.add("hidden");
+  renderHome();
+  renderHealth();
 }
 
 // Supplements
@@ -1390,7 +1421,8 @@ function bindExportEvents() {
 // ---------------- Init ----------------
 
 openDB().then(async () => {
-  await seedFirstRun();
+  await maybeShowSetup();
+  document.getElementById("setupSaveBtn")?.addEventListener("click", saveSetup);
   renderCategoryChips();
   renderSymptomChips();
   bindDiaryEvents();
