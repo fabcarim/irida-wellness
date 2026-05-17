@@ -1,0 +1,15 @@
+{
+  "name": "Irida Wellness",
+  "short_name": "Irida",
+  "description": "Diario benessere personale di Irida",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#fcf9f7",
+  "theme_color": "#8b4e3e",
+  "lang": "it",
+  "icons": [
+    { "src": "icons/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}

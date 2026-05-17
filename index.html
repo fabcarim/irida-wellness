@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<meta name="theme-color" content="#8b4e3e" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="default" />
+<meta name="apple-mobile-web-app-title" content="Irida Wellness" />
+<link rel="manifest" href="manifest.webmanifest" />
+<link rel="icon" type="image/svg+xml" href="icons/icon.svg" />
+<link rel="apple-touch-icon" href="icons/icon.svg" />
+<title>Irida Wellness</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif:ital,wght@0,400;0,600;0,700;1,400;1,600&family=Be+Vietnam+Pro:wght@400;600;700&display=swap" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        colors: {
+          "primary": "#8b4e3e",
+          "on-primary": "#ffffff",
+          "primary-container": "#ffb09c",
+          "on-primary-container": "#7a4032",
+          "primary-fixed": "#ffdbd2",
+          "primary-fixed-dim": "#ffb4a2",
+          "on-primary-fixed": "#370d04",
+          "on-primary-fixed-variant": "#6e3729",
+          "secondary": "#98434e",
+          "on-secondary": "#ffffff",
+          "secondary-container": "#ff959f",
+          "on-secondary-container": "#792b36",
+          "secondary-fixed": "#ffdadb",
+          "secondary-fixed-dim": "#ffb2b8",
+          "on-secondary-fixed": "#40000f",
+          "on-secondary-fixed-variant": "#7a2c37",
+          "tertiary": "#36666b",
+          "on-tertiary": "#ffffff",
+          "tertiary-container": "#9bccd1",
+          "on-tertiary-container": "#27575c",
+          "tertiary-fixed": "#baebf1",
+          "tertiary-fixed-dim": "#9ecfd4",
+          "on-tertiary-fixed": "#002023",
+          "on-tertiary-fixed-variant": "#1b4e52",
+          "error": "#ba1a1a",
+          "on-error": "#ffffff",
+          "error-container": "#ffdad6",
+          "on-error-container": "#93000a",
+          "background": "#fcf9f7",
+          "on-background": "#1b1c1b",
+          "surface": "#fcf9f7",
+          "on-surface": "#1b1c1b",
+          "surface-variant": "#e5e2e0",
+          "on-surface-variant": "#534340",
+          "surface-bright": "#fcf9f7",
+          "surface-dim": "#dcd9d8",
+          "surface-container-lowest": "#ffffff",
+          "surface-container-low": "#f6f3f1",
+          "surface-container": "#f0edeb",
+          "surface-container-high": "#eae8e6",
+          "surface-container-highest": "#e5e2e0",
+          "outline": "#85736f",
+          "outline-variant": "#d8c2bd",
+        },
+        borderRadius: { DEFAULT: "0.25rem", lg: "0.5rem", xl: "0.75rem", full: "9999px" },
+        spacing: {
+          "base": "8px", "gutter": "16px",
+          "stack-sm": "12px", "stack-md": "24px", "stack-lg": "48px",
+          "container-padding-mobile": "24px",
+          "container-padding-desktop": "64px",
+        },
+        fontFamily: {
+          "serif": ["Noto Serif", "serif"],
+          "sans": ["Be Vietnam Pro", "sans-serif"],
+        },
+        fontSize: {
+          "headline-lg-mobile": ["28px", { lineHeight: "36px", fontWeight: "600" }],
+          "display-lg": ["48px", { lineHeight: "56px", letterSpacing: "-0.02em", fontWeight: "700" }],
+          "headline-lg": ["32px", { lineHeight: "40px", fontWeight: "600" }],
+          "title-md": ["20px", { lineHeight: "28px", fontWeight: "600" }],
+          "body-sm": ["14px", { lineHeight: "20px", fontWeight: "400" }],
+          "body-lg": ["16px", { lineHeight: "24px", fontWeight: "400" }],
+          "label-caps": ["12px", { lineHeight: "16px", letterSpacing: "0.05em", fontWeight: "700" }],
+        },
+      },
+    },
+  };
+</script>
+<style>
+  html, body { font-family: "Be Vietnam Pro", sans-serif; }
+  .font-serif { font-family: "Noto Serif", serif; }
+  .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+  .soft-card { box-shadow: 0px 4px 20px rgba(152, 67, 78, 0.04); }
+  .view { display: none; }
+  .view.active { display: block; }
+  /* iOS safe area */
+  .pb-safe { padding-bottom: calc(96px + env(safe-area-inset-bottom)); }
+  .bottom-safe { padding-bottom: env(safe-area-inset-bottom); }
+</style>
+</head>
+<body class="bg-background text-on-background min-h-screen pb-safe">
+
+<!-- TopAppBar -->
+<header class="flex justify-between items-center px-container-padding-mobile py-4 w-full sticky top-0 bg-background z-40">
+  <div class="flex items-center gap-2">
+    <span class="font-serif text-headline-lg-mobile text-primary italic">Irida Wellness</span>
+  </div>
+  <button id="quickAddBtn" class="text-primary active:scale-95 transition-transform" aria-label="Aggiungi">
+    <span class="material-symbols-outlined text-3xl">add_circle</span>
+  </button>
+</header>
+
+<!-- Main -->
+<main class="px-container-padding-mobile pt-base">
+
+  <!-- ===== HOME = pannello di controllo INPUT ===== -->
+  <section id="view-home" class="view active">
+    <div class="mb-stack-md">
+      <h2 class="font-serif text-headline-lg-mobile text-on-surface mb-1" id="homeGreeting">Buongiorno, Irida</h2>
+      <p class="text-on-surface-variant text-sm" id="homeSubtitle">Oggi</p>
+    </div>
+
+    <!-- Promemoria proattivi -->
+    <div id="remindersCard" class="hidden bg-primary-fixed text-on-primary-fixed rounded-xl p-4 soft-card mb-stack-md">
+      <div class="flex items-center gap-2 mb-2">
+        <span class="material-symbols-outlined">notifications_active</span>
+        <span class="font-bold text-label-caps uppercase">Promemoria di oggi</span>
+      </div>
+      <ul id="remindersList" class="space-y-1.5 text-sm"></ul>
+    </div>
+
+    <!-- Insight breve -->
+    <div class="bg-secondary-fixed text-on-secondary-container rounded-xl p-4 soft-card mb-stack-md">
+      <div class="flex items-center gap-2 mb-1">
+        <span class="material-symbols-outlined text-base">lightbulb</span>
+        <span class="font-bold text-label-caps uppercase">Insight</span>
+      </div>
+      <p class="font-serif italic text-sm leading-relaxed" id="insightText">Inizia a tracciare i tuoi pasti per vedere i tuoi insight.</p>
+    </div>
+
+    <!-- ==== INPUT RAPIDI ==== -->
+    <div class="mb-3 flex items-center gap-2">
+      <span class="material-symbols-outlined text-primary">edit_note</span>
+      <h3 class="font-serif text-title-md text-primary">Registra oggi</h3>
+    </div>
+
+    <!-- Sideral / integratori -->
+    <div class="bg-surface-container-lowest rounded-xl p-4 soft-card mb-3">
+      <div class="flex items-center justify-between mb-2">
+        <div class="flex items-center gap-2">
+          <span class="material-symbols-outlined text-secondary text-base">medication</span>
+          <span class="text-label-caps uppercase text-on-surface-variant">Integratori</span>
+        </div>
+        <span class="text-xs text-on-surface-variant" id="supplementStreakLabel"></span>
+      </div>
+      <div id="supplementsList" class="flex flex-col gap-2"></div>
+    </div>
+
+    <!-- Acqua -->
+    <div class="bg-surface-container-lowest rounded-xl p-4 soft-card mb-3">
+      <div class="flex items-center justify-between mb-3">
+        <div class="flex items-center gap-2">
+          <span class="material-symbols-outlined text-tertiary text-base">water_drop</span>
+          <span class="text-label-caps uppercase text-on-surface-variant">Acqua</span>
+        </div>
+        <span class="text-sm font-bold text-tertiary"><span id="waterCount">0</span> / <span id="waterGoal">8</span></span>
+      </div>
+      <div class="flex gap-1.5 flex-wrap" id="waterGlasses"></div>
+    </div>
+
+    <!-- Cibo: chip categorie + porzione -->
+    <div class="bg-surface-container-lowest rounded-xl p-4 soft-card mb-3">
+      <div class="flex items-center justify-between mb-3">
+        <div class="flex items-center gap-2">
+          <span class="material-symbols-outlined text-primary text-base">restaurant</span>
+          <span class="text-label-caps uppercase text-on-surface-variant">Cosa hai mangiato</span>
+        </div>
+        <span class="text-xs text-on-surface-variant"><span id="todayMealCount">0</span> oggi</span>
+      </div>
+      <div id="categoryChips" class="flex flex-wrap gap-2 mb-2"></div>
+
+      <div id="portionPicker" class="hidden border-t border-outline-variant/30 pt-3 mt-2">
+        <p class="text-xs text-on-surface-variant mb-2">Porzione per <strong id="pickerCategory" class="text-primary"></strong></p>
+        <div class="grid grid-cols-3 gap-2">
+          <button data-portion="S" class="portionBtn py-2.5 rounded-xl bg-surface-container-low font-bold text-on-surface text-sm active:scale-95">Piccola</button>
+          <button data-portion="M" class="portionBtn py-2.5 rounded-xl bg-primary-fixed text-on-primary-fixed font-bold text-sm active:scale-95">Media</button>
+          <button data-portion="L" class="portionBtn py-2.5 rounded-xl bg-surface-container-low font-bold text-on-surface text-sm active:scale-95">Grande</button>
+        </div>
+        <button id="cancelPicker" class="w-full mt-2 text-xs text-on-surface-variant">Annulla</button>
+      </div>
+    </div>
+
+    <!-- Sintomi: come ti senti -->
+    <div class="bg-surface-container-lowest rounded-xl p-4 soft-card mb-3">
+      <div class="flex items-center justify-between mb-3">
+        <div class="flex items-center gap-2">
+          <span class="material-symbols-outlined text-secondary text-base">mood</span>
+          <span class="text-label-caps uppercase text-on-surface-variant">Come ti senti</span>
+        </div>
+        <span class="text-xs text-on-surface-variant" id="symptomLog"></span>
+      </div>
+      <div id="symptomChips" class="flex flex-wrap gap-2"></div>
+    </div>
+
+    <!-- Peso quick input -->
+    <div class="bg-surface-container-lowest rounded-xl p-4 soft-card mb-3">
+      <div class="flex items-center justify-between mb-2">
+        <div class="flex items-center gap-2">
+          <span class="material-symbols-outlined text-primary text-base">monitor_weight</span>
+          <span class="text-label-caps uppercase text-on-surface-variant">Peso</span>
+        </div>
+        <span class="text-xs text-on-surface-variant">Ultimo: <span id="todayWeight">—</span> kg · <span id="todayBmi">—</span></span>
+      </div>
+      <div class="flex gap-2">
+        <input id="weightInputHome" type="number" step="0.1" placeholder="kg"
+          class="flex-1 px-4 py-2.5 rounded-lg border border-outline-variant bg-surface-container-low" />
+        <button id="weightSaveHome" class="px-5 py-2.5 bg-primary text-on-primary rounded-full font-bold text-sm active:scale-95">Salva</button>
+      </div>
+    </div>
+
+    <!-- Ciclo quick -->
+    <div class="bg-surface-container-lowest rounded-xl p-4 soft-card mb-stack-md">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <span class="material-symbols-outlined text-secondary text-base" style="font-variation-settings:'FILL' 1;">female</span>
+          <div>
+            <p class="text-label-caps uppercase text-on-surface-variant">Ciclo</p>
+            <p class="text-sm font-bold text-secondary" id="cycleStatus">Imposta primo giorno</p>
+          </div>
+        </div>
+        <button id="logPeriodBtnHome" class="text-sm font-bold text-secondary active:scale-95 px-3 py-2 rounded-full bg-secondary-fixed">+ Ciclo</button>
+      </div>
+    </div>
+
+    <!-- ==== ACCESSO RAPIDO ALLE ANALISI ==== -->
+    <div class="mb-3 flex items-center gap-2 mt-stack-md">
+      <span class="material-symbols-outlined text-on-surface-variant">analytics</span>
+      <h3 class="font-serif text-title-md text-on-surface">Analisi</h3>
+    </div>
+
+    <div class="grid grid-cols-3 gap-2 mb-stack-md">
+      <a href="#diary" class="bg-surface-container-lowest rounded-xl p-3 soft-card flex flex-col items-center gap-1 active:scale-95">
+        <span class="material-symbols-outlined text-primary">insights</span>
+        <span class="text-xs font-bold text-on-surface">Diario</span>
+        <span class="font-serif text-lg text-primary" id="quickScore">—</span>
+      </a>
+      <a href="#health" class="bg-surface-container-lowest rounded-xl p-3 soft-card flex flex-col items-center gap-1 active:scale-95">
+        <span class="material-symbols-outlined text-tertiary">favorite</span>
+        <span class="text-xs font-bold text-on-surface">Salute</span>
+        <span class="font-serif text-lg text-tertiary" id="quickBmi">—</span>
+      </a>
+      <a href="#plan" class="bg-surface-container-lowest rounded-xl p-3 soft-card flex flex-col items-center gap-1 active:scale-95">
+        <span class="material-symbols-outlined text-secondary">menu_book</span>
+        <span class="text-xs font-bold text-on-surface">Piano</span>
+        <span class="text-[10px] text-on-surface-variant">riferimento</span>
+      </a>
+    </div>
+
+    <!-- Export per analisi esterna -->
+    <div class="bg-surface-container-low rounded-xl p-4 mb-stack-md">
+      <div class="flex items-center gap-2 mb-2">
+        <span class="material-symbols-outlined text-on-surface-variant text-base">ios_share</span>
+        <span class="text-label-caps uppercase text-on-surface-variant">Approfondisci con Claude</span>
+      </div>
+      <div class="flex gap-2">
+        <button id="exportMd" class="flex-1 py-2.5 bg-primary text-on-primary rounded-full font-bold text-sm active:scale-95">Copia markdown</button>
+        <button id="exportJson" class="px-4 py-2.5 bg-surface-container-high text-on-surface rounded-full font-bold active:scale-95" title="Esporta JSON completo">⇩</button>
+      </div>
+      <p id="exportFeedback" class="text-xs text-tertiary mt-2 hidden">Copiato negli appunti ✓</p>
+    </div>
+  </section>
+
+  <!-- ===== DIARY = analitica cibo (nessun input) ===== -->
+  <section id="view-diary" class="view">
+    <div class="mb-stack-md">
+      <h2 class="font-serif text-headline-lg-mobile text-on-surface mb-1">Diario · Analisi</h2>
+      <p class="text-on-surface-variant text-sm">Come stai mangiando — ultimi 7 giorni</p>
+    </div>
+
+    <!-- Ideale vs Reale (settimana) -->
+    <div class="bg-surface-container-lowest rounded-2xl p-5 soft-card mb-stack-md border-2 border-primary/20">
+      <div class="flex items-center justify-between mb-3">
+        <div class="flex items-center gap-2">
+          <span class="material-symbols-outlined text-primary">insights</span>
+          <h3 class="font-serif text-title-md text-primary">Ideale vs Reale</h3>
+        </div>
+        <span class="text-label-caps uppercase text-on-surface-variant px-2 py-1 bg-surface-container-low rounded-full">7 GIORNI</span>
+      </div>
+
+      <!-- Score globale -->
+      <div id="idealSummary" class="bg-surface-container-low rounded-xl p-4 mb-4"></div>
+
+      <!-- Gruppi categorie -->
+      <div id="idealCompare" class="flex flex-col"></div>
+
+      <div class="flex gap-2 mt-4 pt-3 border-t border-outline-variant/30">
+        <button id="editIdealBtn" class="flex-1 text-sm text-primary font-bold py-2">⚙ Modifica target</button>
+        <button onclick="location.hash='#plan'" class="flex-1 text-sm text-tertiary font-bold py-2">📖 Vedi piano →</button>
+      </div>
+    </div>
+
+    <!-- Navigatore storia giorni -->
+    <div class="bg-surface-container-lowest rounded-xl p-5 soft-card mb-stack-md">
+      <div class="flex justify-between items-center mb-3">
+        <h3 class="font-serif text-title-md text-on-surface" id="diaryDateLabel">Oggi</h3>
+        <div class="flex gap-2">
+          <button id="diaryPrevDay" class="w-9 h-9 rounded-full bg-surface-container-low text-primary active:scale-95"><span class="material-symbols-outlined text-base">chevron_left</span></button>
+          <button id="diaryNextDay" class="w-9 h-9 rounded-full bg-surface-container-low text-primary active:scale-95"><span class="material-symbols-outlined text-base">chevron_right</span></button>
+        </div>
+      </div>
+      <div id="diaryLog" class="flex flex-col gap-1"></div>
+    </div>
+  </section>
+
+  <!-- Modal: modifica diario ideale -->
+  <div id="idealModal" class="hidden fixed inset-0 z-50 bg-black/40 flex items-end md:items-center justify-center">
+    <div class="bg-surface-container-lowest rounded-t-2xl md:rounded-2xl w-full md:max-w-md p-6 max-h-[85vh] overflow-y-auto">
+      <div class="flex justify-between items-center mb-4">
+        <h3 class="font-serif text-title-md">Diario ideale (per giorno)</h3>
+        <button id="closeIdealModal"><span class="material-symbols-outlined">close</span></button>
+      </div>
+      <p class="text-sm text-on-surface-variant mb-4">Quante porzioni medie a settimana? Lascia 0 per "non rilevante".</p>
+      <div id="idealForm" class="flex flex-col gap-3"></div>
+      <button id="saveIdeal" class="w-full mt-4 py-3 bg-primary text-on-primary rounded-full font-bold active:scale-95">Salva</button>
+    </div>
+  </div>
+
+  <!-- ===== PIANO (riferimento) ===== -->
+  <section id="view-plan" class="view">
+    <div class="mb-stack-md">
+      <h2 class="font-serif text-headline-lg-mobile text-on-surface mb-1">Piano dieta</h2>
+      <p class="text-on-surface-variant">Riferimento antinfiammatorio — la tua bussola, non una gabbia.</p>
+    </div>
+
+    <!-- Filosofia -->
+    <div class="bg-secondary-fixed text-on-secondary-container rounded-xl p-5 soft-card mb-stack-md">
+      <div class="flex items-center gap-2 mb-2">
+        <span class="material-symbols-outlined">favorite</span>
+        <span class="font-label-caps uppercase">Filosofia</span>
+      </div>
+      <p class="font-serif italic leading-relaxed">
+        Mangiare per ridurre l'infiammazione cronica: più omega-3, polifenoli, fibre e crucifere; meno zuccheri raffinati, ultra-processati e carne rossa. Vitamina D dalla dieta (pesce grasso, tuorlo, funghi) e integrazione su parere medico — <strong>non dal sole</strong>.
+      </p>
+    </div>
+
+    <!-- Giornata tipo -->
+    <div class="bg-surface-container-lowest rounded-xl p-5 soft-card mb-stack-md">
+      <h3 class="font-serif text-title-md text-on-surface mb-3">Giornata tipo</h3>
+
+      <div class="flex gap-3 mb-3 p-3 rounded-lg bg-surface-container-low">
+        <span class="material-symbols-outlined text-primary mt-0.5">wb_twilight</span>
+        <div class="flex-1">
+          <p class="font-semibold text-on-surface text-sm">Colazione</p>
+          <p class="text-sm text-on-surface-variant">Avena o pane integrale con burro di mandorle e frutti rossi. Tè verde o caffè senza zucchero. Yogurt greco o kefir 2-3 volte/settimana.</p>
+        </div>
+      </div>
+
+      <div class="flex gap-3 mb-3 p-3 rounded-lg bg-surface-container-low">
+        <span class="material-symbols-outlined text-primary mt-0.5">light_mode</span>
+        <div class="flex-1">
+          <p class="font-semibold text-on-surface text-sm">Spuntino mattina</p>
+          <p class="text-sm text-on-surface-variant">Una manciata di noci/mandorle (≈30g) o frutta fresca. Mai prodotti da forno industriali.</p>
+        </div>
+      </div>
+
+      <div class="flex gap-3 mb-3 p-3 rounded-lg bg-surface-container-low">
+        <span class="material-symbols-outlined text-primary mt-0.5">restaurant</span>
+        <div class="flex-1">
+          <p class="font-semibold text-on-surface text-sm">Pranzo (piatto unico)</p>
+          <p class="text-sm text-on-surface-variant">½ piatto verdure (cotte+crude, includi crucifera), ¼ cereale integrale o legumi, ¼ proteina (pesce/uova/legumi). 2 cucchiai EVO a crudo. Spezie: curcuma, zenzero, rosmarino.</p>
+        </div>
+      </div>
+
+      <div class="flex gap-3 mb-3 p-3 rounded-lg bg-surface-container-low">
+        <span class="material-symbols-outlined text-primary mt-0.5">coffee</span>
+        <div class="flex-1">
+          <p class="font-semibold text-on-surface text-sm">Spuntino pomeriggio</p>
+          <p class="text-sm text-on-surface-variant">Frutta + cioccolato fondente ≥85% (1 quadretto), oppure hummus con verdure.</p>
+        </div>
+      </div>
+
+      <div class="flex gap-3 p-3 rounded-lg bg-surface-container-low">
+        <span class="material-symbols-outlined text-primary mt-0.5">dinner_dining</span>
+        <div class="flex-1">
+          <p class="font-semibold text-on-surface text-sm">Cena</p>
+          <p class="text-sm text-on-surface-variant">Più leggera: pesce azzurro (salmone, sardine, sgombro) o legumi con verdure abbondanti. Evita carboidrati raffinati la sera.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Settimana antinfiammatoria -->
+    <div class="bg-surface-container-lowest rounded-xl p-5 soft-card mb-stack-md">
+      <h3 class="font-serif text-title-md text-on-surface mb-3">Target settimanale</h3>
+      <div class="grid grid-cols-2 gap-2 text-sm">
+        <div class="p-2 rounded-lg bg-tertiary-container/40 text-on-tertiary-container">🥬 Verdura: <strong>4/die</strong></div>
+        <div class="p-2 rounded-lg bg-secondary-fixed text-on-secondary-container">🍓 Frutta: <strong>2/die</strong></div>
+        <div class="p-2 rounded-lg bg-tertiary-container/40 text-on-tertiary-container">🐟 Pesce azzurro: <strong>3-4/sett</strong></div>
+        <div class="p-2 rounded-lg bg-tertiary-fixed text-on-tertiary-fixed">🫘 Legumi: <strong>5/sett</strong></div>
+        <div class="p-2 rounded-lg bg-tertiary-container/40 text-on-tertiary-container">🌰 Frutta secca: <strong>1/die</strong></div>
+        <div class="p-2 rounded-lg bg-primary-fixed text-on-primary-fixed">🌾 Cereali integrali: <strong>2/die</strong></div>
+        <div class="p-2 rounded-lg bg-primary-fixed text-on-primary-fixed">🥚 Uova: <strong>3-4/sett</strong></div>
+        <div class="p-2 rounded-lg bg-tertiary-container/40 text-on-tertiary-container">🫒 EVO crudo: <strong>3/die</strong></div>
+      </div>
+    </div>
+
+    <!-- Preferisci -->
+    <div class="bg-surface-container-lowest rounded-xl p-5 soft-card mb-stack-md border-l-4 border-tertiary">
+      <h3 class="font-serif text-title-md text-tertiary mb-2">✓ Preferisci</h3>
+      <ul class="text-sm space-y-1 text-on-surface">
+        <li>• <strong>Pesce azzurro</strong>: salmone selvaggio, sardine, sgombro, alici (omega-3)</li>
+        <li>• <strong>Crucifere</strong>: broccoli, cavolfiore, cavolo nero, rucola, rapa (sulforafano)</li>
+        <li>• <strong>Frutti rossi</strong>: mirtilli, more, lamponi, fragole (antocianine)</li>
+        <li>• <strong>Frutta secca</strong>: noci, mandorle, semi di lino/chia (omega-3 vegetale)</li>
+        <li>• <strong>EVO extravergine</strong> a crudo (oleocantale, polifenoli)</li>
+        <li>• <strong>Spezie</strong>: curcuma+pepe nero, zenzero, rosmarino, cannella</li>
+        <li>• <strong>Tè verde</strong>, matcha, tisane (catechine)</li>
+        <li>• <strong>Funghi</strong>: shiitake, champignon (vit D + beta-glucani)</li>
+        <li>• <strong>Cioccolato fondente ≥85%</strong> (1-2 quadretti/die)</li>
+        <li>• <strong>Legumi</strong> al posto della carne 3-4 volte/sett</li>
+      </ul>
+    </div>
+
+    <!-- Limita -->
+    <div class="bg-surface-container-lowest rounded-xl p-5 soft-card mb-stack-md border-l-4 border-secondary">
+      <h3 class="font-serif text-title-md text-secondary mb-2">⚠ Limita</h3>
+      <ul class="text-sm space-y-1 text-on-surface">
+        <li>• <strong>Carne rossa</strong> (max 1/sett, meglio 0)</li>
+        <li>• <strong>Latticini</strong> stagionati/grassi (preferisci yogurt/kefir)</li>
+        <li>• <strong>Cereali raffinati</strong>: pane bianco, pasta normale, riso bianco</li>
+        <li>• <strong>Caffè</strong>: max 2/die, mai a stomaco vuoto</li>
+        <li>• <strong>Sale</strong>: usa erbe e spezie</li>
+        <li>• <strong>Frutta tropicale molto zuccherina</strong> (mango, ananas) → ok ma con moderazione</li>
+      </ul>
+    </div>
+
+    <!-- Evita -->
+    <div class="bg-surface-container-lowest rounded-xl p-5 soft-card mb-stack-md border-l-4 border-error">
+      <h3 class="font-serif text-title-md text-error mb-2">✗ Evita</h3>
+      <ul class="text-sm space-y-1 text-on-surface">
+        <li>• <strong>Carni processate</strong>: salumi, würstel, bacon (cancerogeni IARC gruppo 1)</li>
+        <li>• <strong>Zuccheri raffinati</strong> e dolcificanti aggiunti</li>
+        <li>• <strong>Bibite zuccherate</strong> e succhi industriali</li>
+        <li>• <strong>Grassi trans</strong>: margarina, prodotti da forno industriali, fritture commerciali</li>
+        <li>• <strong>Oli di semi raffinati</strong>: girasole, mais, soia (omega-6 alti)</li>
+        <li>• <strong>Ultra-processati</strong>: snack confezionati, cereali zuccherati, pronti</li>
+        <li>• <strong>Alcol</strong>: evitare (anche perché stimola infiammazione e altera estrogeni)</li>
+      </ul>
+    </div>
+
+    <!-- Ciclo -->
+    <div class="bg-surface-container-lowest rounded-xl p-5 soft-card mb-stack-md">
+      <h3 class="font-serif text-title-md text-on-surface mb-3">Adatta al ciclo</h3>
+      <div class="space-y-2 text-sm">
+        <div class="p-2 rounded-lg bg-secondary/15">
+          <p class="font-semibold text-secondary">Mestruale (gg 1-5)</p>
+          <p class="text-on-surface-variant">↑ ferro: legumi, spinaci, pesce. Cottura dolce. Tisane zenzero/camomilla. Cioccolato fondente per magnesio.</p>
+        </div>
+        <div class="p-2 rounded-lg bg-tertiary/15">
+          <p class="font-semibold text-tertiary">Follicolare (gg 6-13)</p>
+          <p class="text-on-surface-variant">Energia alta — proteine pulite, fermentati (kefir, miso, crauti) per microbiota.</p>
+        </div>
+        <div class="p-2 rounded-lg bg-tertiary/25">
+          <p class="font-semibold text-tertiary">Ovulazione (gg 12-16)</p>
+          <p class="text-on-surface-variant">Antiossidanti: frutti rossi, agrumi, crucifere (supportano detox estrogeni).</p>
+        </div>
+        <div class="p-2 rounded-lg bg-primary-fixed">
+          <p class="font-semibold text-primary">Luteale (gg 17-28)</p>
+          <p class="text-on-surface-variant">↑ magnesio (mandorle, semi di zucca, cacao). ↓ sale e zuccheri (PMS). Carboidrati complessi per serotonina.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Nutrienti chiave -->
+    <div class="bg-surface-container-lowest rounded-xl p-5 soft-card mb-stack-md">
+      <h3 class="font-serif text-title-md text-on-surface mb-3">Nutrienti da monitorare</h3>
+      <div class="space-y-2 text-sm">
+        <p><strong class="text-primary">Vitamina D</strong> — pesce grasso, tuorlo, funghi esposti UV, integratore D3 su parere medico. <strong>Non dal sole.</strong></p>
+        <p><strong class="text-primary">Omega-3</strong> — pesce azzurro 3-4×/sett, noci, semi di lino macinati, semi di chia.</p>
+        <p><strong class="text-primary">Ferro</strong> — legumi + vit C (limone) per assorbire, spinaci cotti, pesce, uova.</p>
+        <p><strong class="text-primary">B12</strong> — pesce, uova, latticini moderati. Considera integrazione se vegetariana.</p>
+        <p><strong class="text-primary">Magnesio</strong> — mandorle, semi di zucca, cacao, foglie verdi.</p>
+        <p><strong class="text-primary">Polifenoli</strong> — frutti rossi, EVO, tè verde, cioccolato fondente, erbe aromatiche.</p>
+      </div>
+    </div>
+
+    <p class="text-xs text-on-surface-variant italic px-2 mb-stack-md">
+      Questo piano è un riferimento generale costruito su evidenze antinfiammatorie. Non sostituisce il parere del medico o di un nutrizionista. Personalizza secondo intolleranze, esami e indicazioni cliniche.
+    </p>
+  </section>
+
+  <!-- ===== HEALTH = analitica salute ===== -->
+  <section id="view-health" class="view">
+    <div class="mb-stack-md">
+      <h2 class="font-serif text-headline-lg-mobile text-on-surface mb-1">Salute · Analisi</h2>
+      <p class="text-on-surface-variant text-sm">Peso, ciclo, esami, sintomi nel tempo.</p>
+    </div>
+
+    <!-- Peso (analitica) -->
+    <div class="bg-surface-container-lowest rounded-xl p-5 soft-card mb-stack-md">
+      <div class="flex justify-between items-start mb-3">
+        <div>
+          <h3 class="font-serif text-title-md text-on-surface">Peso</h3>
+          <p class="text-xs text-on-surface-variant" id="weightTrendLabel">—</p>
+        </div>
+        <div class="text-right">
+          <span class="font-serif text-display-lg text-primary" id="weightLast">—</span>
+          <span class="text-sm text-on-surface-variant">kg</span>
+        </div>
+      </div>
+      <div id="bmiBox" class="bg-surface-container-low rounded-xl p-4 mb-3"></div>
+      <svg id="weightChart" viewBox="0 0 320 120" class="w-full h-32"></svg>
+      <p class="text-xs text-on-surface-variant mt-2 text-center">Per registrare un nuovo peso, vai in Home →</p>
+    </div>
+
+    <!-- Ciclo -->
+    <div class="bg-surface-container-lowest rounded-xl p-5 soft-card mb-stack-md">
+      <div class="flex justify-between items-center mb-3">
+        <div>
+          <h3 class="font-serif text-title-md text-on-surface">Ciclo mestruale</h3>
+          <p class="text-xs text-on-surface-variant" id="cyclePhaseLabel">—</p>
+        </div>
+        <button id="logPeriodBtn" class="text-sm font-bold text-secondary active:scale-95 px-3 py-1.5 rounded-full bg-secondary-fixed">+ Ciclo</button>
+      </div>
+      <div class="grid grid-cols-7 gap-1.5 mb-3" id="cycleCalendar"></div>
+      <div class="grid grid-cols-3 gap-3 pt-3 border-t border-outline-variant/30 text-center">
+        <div>
+          <p class="text-label-caps uppercase text-on-surface-variant">Prossimo</p>
+          <p class="text-sm font-bold text-on-surface" id="cycleNext">—</p>
+        </div>
+        <div>
+          <p class="text-label-caps uppercase text-on-surface-variant">Ovulazione</p>
+          <p class="text-sm font-bold text-on-surface" id="cycleOv">—</p>
+        </div>
+        <div>
+          <p class="text-label-caps uppercase text-on-surface-variant">Media</p>
+          <p class="text-sm font-bold text-on-surface" id="cycleAvg">—</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Storia sintomi (settimana) -->
+    <div class="bg-surface-container-lowest rounded-xl p-5 soft-card mb-stack-md">
+      <h3 class="font-serif text-title-md text-on-surface mb-3">Sintomi · ultimi 7 giorni</h3>
+      <div id="symptomHistory" class="flex flex-col gap-2"></div>
+      <p class="text-xs text-on-surface-variant mt-3 text-center">Per segnare come ti senti oggi, vai in Home →</p>
+    </div>
+
+    <!-- Esami sangue -->
+    <div class="bg-surface-container-lowest rounded-xl p-5 soft-card mb-stack-md">
+      <h3 class="font-serif text-title-md text-on-surface mb-3">Esami del sangue</h3>
+      <div class="grid grid-cols-2 gap-2 mb-3">
+        <input id="labMarker" list="markerList" placeholder="Marker (es. Ferritina)"
+          class="px-3 py-2 rounded-lg border border-outline-variant bg-surface-container-low" />
+        <datalist id="markerList">
+          <option>Emoglobina</option><option>Ferritina</option><option>Ferro</option>
+          <option>Vitamina D</option><option>Vitamina B12</option><option>TSH</option>
+          <option>FT3</option><option>FT4</option><option>Glicemia</option>
+          <option>Colesterolo Tot</option><option>HDL</option><option>LDL</option>
+          <option>Trigliceridi</option><option>Creatinina</option><option>Omocisteina</option>
+          <option>Acido Folico</option><option>Estradiolo</option><option>Progesterone</option>
+          <option>Prolattina</option><option>AMH</option>
+        </datalist>
+        <input id="labValue" type="number" step="0.01" placeholder="Valore"
+          class="px-3 py-2 rounded-lg border border-outline-variant bg-surface-container-low" />
+        <input id="labUnit" placeholder="Unità (es. ng/mL)"
+          class="px-3 py-2 rounded-lg border border-outline-variant bg-surface-container-low" />
+        <input id="labDate" type="date"
+          class="px-3 py-2 rounded-lg border border-outline-variant bg-surface-container-low col-span-2" />
+      </div>
+      <button id="labSave" class="w-full py-3 bg-primary text-on-primary rounded-full font-bold active:scale-95">Aggiungi valore</button>
+      <div id="labList" class="mt-4 flex flex-col gap-3"></div>
+    </div>
+  </section>
+
+</main>
+
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-4 pt-2 bottom-safe bg-surface-container-lowest rounded-t-xl shadow-lg">
+  <a href="#home" data-nav="home" class="nav-link flex flex-col items-center justify-center px-3 py-2">
+    <span class="material-symbols-outlined">home</span>
+    <span class="text-label-caps">Home</span>
+  </a>
+  <a href="#diary" data-nav="diary" class="nav-link flex flex-col items-center justify-center px-3 py-2">
+    <span class="material-symbols-outlined">restaurant</span>
+    <span class="text-label-caps">Diario</span>
+  </a>
+  <a href="#plan" data-nav="plan" class="nav-link flex flex-col items-center justify-center px-3 py-2">
+    <span class="material-symbols-outlined">menu_book</span>
+    <span class="text-label-caps">Piano</span>
+  </a>
+  <a href="#health" data-nav="health" class="nav-link flex flex-col items-center justify-center px-3 py-2">
+    <span class="material-symbols-outlined" style="font-variation-settings:'FILL' 1;">favorite</span>
+    <span class="text-label-caps">Salute</span>
+  </a>
+</nav>
+
+<script type="module" src="app.js"></script>
+<script>
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(console.error));
+  }
+</script>
+</body>
+</html>
