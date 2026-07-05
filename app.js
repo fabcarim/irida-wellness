@@ -2,7 +2,7 @@
 // Storage: IndexedDB (sola Irida, su questo iPhone). Export JSON per backup.
 
 const DB_NAME = "irida-wellness";
-const DB_VERSION = 2;
+const DB_VERSION = 3;
 
 const STORES = {
   food:        "food",        // { id, ts, category, portion, note }
@@ -12,6 +12,7 @@ const STORES = {
   labs:        "labs",        // { id, ts, marker, value, unit }
   symptom:     "symptom",     // { id, ts, tag, intensity }
   supplements: "supplements", // { id (date:name), date, name, taken, ts }
+  exercise:    "exercise",    // { id (date), date, activityKey, duration, note, ts }
   config:      "config",      // { key, value }
 };
 
@@ -25,12 +26,199 @@ const PROFILE_DEFAULTS = {
   height: 165,
   gender: "F",
   startWeight: null,
+  targetWeight: 60,  // BMI 23.4 a 160cm — range sano + indicazione calo Gremese
   startDate: "",
 };
 
-// Integratori monitorati (uno solo per ora — facile estendere)
+// Integratori monitorati (assunti autonomamente da Irida)
 const SUPPLEMENTS = [
-  { id: "sideral", label: "Sideral", icon: "medication", color: "text-secondary" },
+  { id: "sideral", label: "Sideral (ferro)",           note: "dosaggio da verificare",           icon: "medication", color: "text-secondary" },
+  { id: "drox",    label: "Drox Orosolubile 2000 UI",  note: "Vit D + resveratrolo",             icon: "wb_sunny",   color: "text-primary"   },
+];
+
+// Prescritti dai medici ma NON attualmente assunti (info-only, non trackati)
+const PRESCRIBED_NOT_TAKEN = [
+  { label: "Dibase 10.000 (Vit D)", dose: "6 gtt/die (~2000 UI)", by: "Dr.ssa Gandolfi 06/2026", status: "Sostituito con Drox" },
+  { label: "Milesax",                dose: "da verificare",         by: "Dr.ssa Gremese 12/2025",   status: "Non risulta assunto" },
+];
+
+// Programma esercizio in 3 fasi (dal profilo salute Irida)
+// Ogni giorno: array di attivita previste
+const EXERCISE_PHASES = {
+  base: {
+    label: "Fase 1 — Base (abitudine)",
+    weeks: "settimane 1-4",
+    description: "Costruire l'abitudine, basso impatto. 4-5 sessioni/settimana.",
+    schedule: [
+      { day: "Lun", activities: [{ key: "walk30", label: "Camminata veloce", duration: 30, icon: "directions_walk", note: "Passo sostenuto, all'aperto (Vit D)" }] },
+      { day: "Mar", activities: [{ key: "bodyweight20", label: "Corpo libero", duration: 20, icon: "fitness_center", note: "Squat, affondi, plank, ponte glutei" }] },
+      { day: "Mer", activities: [{ key: "stretch15", label: "Riposo o stretching", duration: 15, icon: "self_improvement", note: "Yoga dolce o stretching" }] },
+      { day: "Gio", activities: [{ key: "walk30", label: "Camminata veloce", duration: 30, icon: "directions_walk", note: "" }] },
+      { day: "Ven", activities: [{ key: "bodyweight20", label: "Corpo libero", duration: 20, icon: "fitness_center", note: "" }] },
+      { day: "Sab", activities: [{ key: "walk45", label: "Camminata lunga o bici", duration: 45, icon: "hiking", note: "Con famiglia" }] },
+      { day: "Dom", activities: [{ key: "rest", label: "Riposo", duration: 0, icon: "bed", note: "" }] },
+    ],
+  },
+  progression: {
+    label: "Fase 2 — Progressione",
+    weeks: "settimane 5-8",
+    description: "Aumentare intensita e varieta. Introdurre nuoto/acquagym.",
+    schedule: [
+      { day: "Lun", activities: [{ key: "walkjog35", label: "Camminata + jogging leggero", duration: 35, icon: "directions_run", note: "3 min camminata + 2 min jogging" }] },
+      { day: "Mar", activities: [{ key: "bodyband30", label: "Corpo libero + elastici", duration: 30, icon: "fitness_center", note: "Resistenza con elastici" }] },
+      { day: "Mer", activities: [{ key: "swim30", label: "Nuoto o acquagym", duration: 30, icon: "pool", note: "Basso impatto per articolazioni" }] },
+      { day: "Gio", activities: [{ key: "walk35", label: "Camminata veloce", duration: 35, icon: "directions_walk", note: "" }] },
+      { day: "Ven", activities: [{ key: "bodyband30", label: "Corpo libero + elastici", duration: 30, icon: "fitness_center", note: "" }] },
+      { day: "Sab", activities: [{ key: "hike60", label: "Escursione o bici", duration: 60, icon: "hiking", note: "" }] },
+      { day: "Dom", activities: [{ key: "yoga20", label: "Riposo o yoga", duration: 20, icon: "self_improvement", note: "" }] },
+    ],
+  },
+  maintenance: {
+    label: "Fase 3 — Mantenimento",
+    weeks: "da settimana 9 in poi",
+    description: "3x cardio + 2x forza + 1x flessibilita + 1x riposo.",
+    schedule: [
+      { day: "Lun", activities: [{ key: "cardio40", label: "Cardio", duration: 40, icon: "directions_run", note: "Camminata veloce / jogging / bici / nuoto" }] },
+      { day: "Mar", activities: [{ key: "strength30", label: "Forza", duration: 30, icon: "fitness_center", note: "Corpo libero + elastici o pesi leggeri" }] },
+      { day: "Mer", activities: [{ key: "cardio40", label: "Cardio", duration: 40, icon: "directions_run", note: "" }] },
+      { day: "Gio", activities: [{ key: "flex20", label: "Flessibilita", duration: 20, icon: "self_improvement", note: "Yoga o stretching" }] },
+      { day: "Ven", activities: [{ key: "cardio40", label: "Cardio", duration: 40, icon: "directions_run", note: "" }] },
+      { day: "Sab", activities: [{ key: "strength30", label: "Forza", duration: 30, icon: "fitness_center", note: "" }] },
+      { day: "Dom", activities: [{ key: "rest", label: "Riposo", duration: 0, icon: "bed", note: "" }] },
+    ],
+  },
+};
+
+const EXERCISE_RULES = [
+  { icon: "healing",       text: "Tallone sinistro (melanoma): se dolore, preferisci bici/nuoto alla camminata." },
+  { icon: "wb_sunny",      text: "Sole: 15-20 min braccia/gambe scoperte per Vit D naturale, poi SPF50+ SEMPRE su cicatrice e nei. Evita fascia 12-15." },
+  { icon: "battery_alert", text: "Ferro basso: non forzare. Con l'affaticamento migliora nel tempo, riduci intensita nei giorni no." },
+  { icon: "water_drop",    text: "Idratazione: bevi PRIMA, DURANTE e DOPO — non solo per la sete, i calcoli renali ringraziano." },
+  { icon: "psychology",    text: "Autoimmunita (ANA+): con artralgie i giorni no sono normali. Meglio poco che niente." },
+];
+
+// Esami da fare (mancanti al quadro clinico)
+const EXAMS_TODO = [
+  { label: "Ferritina",                          why: "MAI dosata in 8 anni. Necessaria per sapere le riserve reali di ferro." },
+  { label: "Transferrina + saturazione",         why: "Completa il quadro ferro e distingue tipi di anemia." },
+  { label: "Vitamina B12",                       why: "Mai dosata. Essenziale per anemia e sistema nervoso." },
+  { label: "Folati",                             why: "Mai dosati. Coinvolti in anemia macrocitica." },
+  { label: "Peso aggiornato",                    why: "Ultimo dato registrato: 2024. Serve per calibrare BMI e target." },
+];
+
+// Profilo clinico di Irida (basato su documentazione 06/2026)
+// Ogni condizione: cosa cambia in dieta + priorita.
+const CLINICAL_PROFILE = [
+  {
+    id: "sideropenia",
+    label: "Sideropenia (ferro basso)",
+    severity: "high",
+    icon: "bloodtype",
+    dietImpact: "Aumenta legumi, pesce, uova, foglie verdi cotte. Abbina sempre vitamina C (limone, agrumi, peperoni, kiwi) per assorbire il ferro non-eme. Evita te/caffe entro 1h dal pasto ricco di ferro.",
+  },
+  {
+    id: "vitd_low",
+    label: "Vitamina D carente (cronica)",
+    severity: "high",
+    icon: "wb_sunny",
+    dietImpact: "Pesce grasso 3-5/sett (salmone, sardine, sgombro, aringhe), tuorlo d'uovo, funghi esposti UV. Integrazione D3 su parere medico. NON dal sole (storia melanoma).",
+  },
+  {
+    id: "dislipidemia",
+    label: "Colesterolo LDL alto (8 anni)",
+    severity: "high",
+    icon: "favorite",
+    dietImpact: "Riduci grassi saturi (carne rossa, burro, formaggi grassi). Aumenta fibre solubili (avena, legumi, mele), omega-3 (pesce, noci, semi di lino), fitosteroli (frutta secca, EVO). Yogurt magro al posto del formaggio stagionato.",
+  },
+  {
+    id: "overweight",
+    label: "Lieve sovrappeso (BMI 26)",
+    severity: "med",
+    icon: "monitor_weight",
+    dietImpact: "Target ~60 kg (BMI 23). Riduci porzioni di cereali raffinati e dolci, aumenta verdura a foglia, controlla porzioni dei grassi (anche buoni). Calo lento: 0.5 kg/settimana.",
+  },
+  {
+    id: "ana_positive",
+    label: "ANA positivo (infiammazione subclinica)",
+    severity: "med",
+    icon: "shield",
+    dietImpact: "Dieta antinfiammatoria stretta: omega-3, curcuma+pepe nero, zenzero, verdure colorate, frutti rossi. Riduci zuccheri raffinati e ultraprocessati.",
+  },
+  {
+    id: "kidney_stones",
+    label: "Calcoli renali millimetrici",
+    severity: "med",
+    icon: "water_drop",
+    dietImpact: "Idratazione abbondante (>2L/die). LIMITA ossalati: spinaci crudi, rabarbaro, cioccolato, te nero, frutta secca in eccesso. No eccesso proteine animali. Sale moderato.",
+  },
+  {
+    id: "premenopause",
+    label: "Pre-menopausa, cicli abbondanti",
+    severity: "med",
+    icon: "female",
+    dietImpact: "Perdita di ferro mensile elevata: nei giorni 1-5 carica ferro+vit C. Magnesio in fase luteale (mandorle, semi di zucca, cacao).",
+  },
+  {
+    id: "uric_acid",
+    label: "Acido urico (era alto, ora normale)",
+    severity: "low",
+    icon: "science",
+    dietImpact: "Mantieni basso: limita frattaglie, acciughe, crostacei in eccesso, birra. Acqua abbondante.",
+  },
+  {
+    id: "melanoma",
+    label: "Melanoma asportato 2025",
+    severity: "info",
+    icon: "healing",
+    dietImpact: "Nessun vincolo alimentare diretto, ma stato infiammatorio basso aiuta. MAI esposizione solare. Vit D solo da dieta/integratore.",
+  },
+];
+
+// Esami: range di riferimento per stato colore
+const LAB_RANGES = {
+  "Ferro":          { min: 50,  max: 170, unit: "μg/dL",   higherIsBetter: false },
+  "Ferritina":      { min: 30,  max: 200, unit: "ng/mL",   higherIsBetter: false },
+  "Emoglobina":     { min: 12,  max: 16,  unit: "g/dL",    higherIsBetter: false },
+  "Vitamina D":     { min: 30,  max: 100, unit: "ng/mL",   higherIsBetter: true  },
+  "Vitamina B12":   { min: 200, max: 900, unit: "pg/mL",   higherIsBetter: false },
+  "Colesterolo Tot":{ min: 0,   max: 190, unit: "mg/dL",   higherIsBetter: false, onlyMax: true },
+  "LDL":            { min: 0,   max: 115, unit: "mg/dL",   higherIsBetter: false, onlyMax: true },
+  "HDL":            { min: 45,  max: 100, unit: "mg/dL",   higherIsBetter: true  },
+  "Trigliceridi":   { min: 0,   max: 150, unit: "mg/dL",   higherIsBetter: false, onlyMax: true },
+  "HbA1c":          { min: 0,   max: 38,  unit: "mmol/mol",higherIsBetter: false, onlyMax: true },
+  "Acido urico":    { min: 2.0, max: 5.7, unit: "mg/dL",   higherIsBetter: false },
+  "Creatinina":     { min: 0.51,max: 0.95,unit: "mg/dL",   higherIsBetter: false },
+  "eGFR":           { min: 60,  max: 200, unit: "mL/min",  higherIsBetter: true  },
+  "TSH":            { min: 0.4, max: 4.0, unit: "μUI/mL",  higherIsBetter: false },
+  "RDW":            { min: 11.5,max: 14.5,unit: "%",       higherIsBetter: false, onlyMax: true },
+};
+
+function labStatus(marker, value) {
+  const r = LAB_RANGES[marker];
+  if (!r) return null;
+  const inRange = r.onlyMax ? value <= r.max : value >= r.min && value <= r.max;
+  if (inRange) return { ok: true, text: "in range", color: "text-tertiary", bg: "bg-tertiary/15", icon: "✓" };
+  const tooLow = !r.onlyMax && value < r.min;
+  return tooLow
+    ? { ok: false, text: "basso", color: "text-error", bg: "bg-error-container", icon: "↓" }
+    : { ok: false, text: "alto",  color: "text-error", bg: "bg-error-container", icon: "↑" };
+}
+
+// Lab pre-popolati (esami 13/06/2026 da documenti clinici)
+const SEED_LABS = [
+  { date: "2025-06-13", marker: "Vitamina D",      value: 28.5,unit: "ng/mL" },  // storico → trend peggiorativo
+  { date: "2026-06-13", marker: "Ferro",           value: 31,  unit: "μg/dL" },
+  { date: "2026-06-13", marker: "Emoglobina",      value: 12.7,unit: "g/dL" },
+  { date: "2026-06-13", marker: "RDW",             value: 14.8,unit: "%" },
+  { date: "2026-06-13", marker: "Vitamina D",      value: 24,  unit: "ng/mL" },
+  { date: "2026-06-13", marker: "Colesterolo Tot", value: 223, unit: "mg/dL" },
+  { date: "2026-06-13", marker: "LDL",             value: 158, unit: "mg/dL" },
+  { date: "2026-06-13", marker: "HDL",             value: 46,  unit: "mg/dL" },
+  { date: "2026-06-13", marker: "Trigliceridi",    value: 97,  unit: "mg/dL" },
+  { date: "2026-06-13", marker: "HbA1c",           value: 34,  unit: "mmol/mol" },
+  { date: "2026-06-13", marker: "Acido urico",     value: 4.0, unit: "mg/dL" },
+  { date: "2026-06-13", marker: "Creatinina",      value: 0.87,unit: "mg/dL" },
+  { date: "2026-06-13", marker: "eGFR",            value: 80,  unit: "mL/min" },
 ];
 
 function openDB() {
@@ -43,6 +231,7 @@ function openDB() {
           let keyPath = "id", autoIncrement = true;
           if (name === "config") { keyPath = "key"; autoIncrement = false; }
           if (name === "supplements") { keyPath = "id"; autoIncrement = false; } // id = "date:name"
+          if (name === "exercise") { keyPath = "id"; autoIncrement = false; } // id = "date:activityKey"
           const s = d.createObjectStore(name, { keyPath, autoIncrement });
           if (name !== "config") {
             try { s.createIndex("ts", "ts"); } catch (e) {}
@@ -89,7 +278,7 @@ function setConfig(key, value) {
 
 // ---------------- Routing ----------------
 
-const views = ["home", "diary", "plan", "health"];
+const views = ["home", "diary", "plan", "health", "exercise"];
 
 function route() {
   const hash = (location.hash || "#home").replace("#", "");
@@ -104,6 +293,7 @@ function route() {
     el.classList.toggle("text-on-surface-variant", !active);
   });
   if (target === "home") { renderHome(); renderInsight(); }
+  if (target === "exercise") { renderExercise(); }
 }
 
 window.addEventListener("hashchange", route);
@@ -151,27 +341,33 @@ const CATEGORIES = [
   { id: "dolci",         label: "Dolci",          icon: "cake",          color: "bg-secondary-fixed-dim text-on-secondary-fixed" },
   { id: "alcol",         label: "Alcol",          icon: "wine_bar",      color: "bg-error-container text-on-error-container" },
   { id: "snack_salati",  label: "Snack salati",   icon: "cookie",        color: "bg-surface-container-high text-on-surface" },
+  { id: "ossalati",      label: "Ossalati alti",  icon: "report",        color: "bg-error-container text-on-error-container" },
 ];
 
-// Ideale settimanale = profilo ANTINFIAMMATORIO (porzioni/settimana).
-// Privilegia: omega-3, polifenoli, fibre, crucifere, basso IG.
-// Limita: zuccheri raffinati, ultra-processati, carni rosse, alcol.
+// Cibi ossalato-alti (da limitare per calcoli renali):
+// spinaci crudi, bietole, rabarbaro, te nero, cioccolato fondente in eccesso,
+// frutta secca in eccesso, barbabietole, prezzemolo a manciate.
+
+// Ideale settimanale - RICALIBRATO sui dati clinici di Irida (06/2026).
+// Priorita: ferro (sideropenia), vit D (carenza cronica), LDL alto, sovrappeso, calcoli renali.
+// Indicazione Dr.ssa Gremese 12/2025: ridurre carne rossa, calo ponderale, vit D.
 const IDEAL_DEFAULT = {
-  verdura: 28,       // 4 porzioni/die (almeno 1 crucifere/die + foglia verde)
-  frutta: 14,        // 2/die — privilegia frutti rossi, agrumi
-  frutti_secchi: 14, // 1 porzione/die (noci, mandorle, semi di lino/chia)
-  cereali_int: 14,   // 2/die integrali (avena, farro, quinoa)
-  cereali_raf: 1,    // quasi zero
-  legumi: 5,         // proteine vegetali principali
-  pesce: 4,          // 3 di cui pesce azzurro per omega-3
+  verdura: 28,       // 4/die — almeno 1 crucifera (sulforafano) + foglia verde cotta (ferro)
+  frutta: 14,        // 2/die — frutti rossi (polifenoli), agrumi/kiwi (vit C → assorbimento ferro)
+  frutti_secchi: 10, // ~1/die (noci, mandorle) — ridotto leggermente per ossalati/calcoli
+  cereali_int: 14,   // 2/die integrali (avena = beta-glucani, riducono LDL)
+  cereali_raf: 0,    // azzerato per LDL e calo peso
+  legumi: 6,         // 6/sett — ferro non-eme + fibre solubili (LDL) + proteine vegetali
+  pesce: 5,          // 5/sett, di cui 3-4 pesce azzurro (omega-3 + vit D + ferro eme)
   carne_bianca: 2,
-  carne_rossa: 1,    // massimo 1, meglio 0
-  uova: 4,           // tuorlo = vit D dietetica
-  latticini: 3,      // moderato, preferire yogurt/kefir
-  grassi_buoni: 21,  // EVO ad ogni pasto + avocado
-  dolci: 1,
+  carne_rossa: 0,    // 0 — indicazione Gremese, anche per LDL e acido urico
+  uova: 5,           // 5/sett — tuorlo = vit D + ferro eme (no contro-indicazione colesterolo)
+  latticini: 4,      // yogurt magro/kefir — Ca (LDL+), evita stagionati grassi
+  grassi_buoni: 21,  // EVO 3/die (oleocantale antinfiammatorio) + avocado
+  dolci: 0,          // 0 — calo peso + LDL + infiammazione (ANA+)
   alcol: 0,
-  snack_salati: 0,
+  snack_salati: 0,   // 0 — calcoli renali (sale) + LDL
+  ossalati: 2,       // max 2/sett — calcoli renali (spinaci crudi, te nero, cioccolato in eccesso)
 };
 
 const PORTION_FACTOR = { S: 0.5, M: 1, L: 1.5 };
@@ -189,10 +385,13 @@ function tsDateKey(ts) { return dateKey(new Date(ts)); }
 
 async function getProfile() {
   return {
-    name:   await getConfig("profile.name",   PROFILE_DEFAULTS.name),
-    dob:    await getConfig("profile.dob",    PROFILE_DEFAULTS.dob),
-    height: await getConfig("profile.height", PROFILE_DEFAULTS.height),
-    gender: await getConfig("profile.gender", PROFILE_DEFAULTS.gender),
+    name:         await getConfig("profile.name",         PROFILE_DEFAULTS.name),
+    dob:          await getConfig("profile.dob",          PROFILE_DEFAULTS.dob),
+    height:       await getConfig("profile.height",       PROFILE_DEFAULTS.height),
+    gender:       await getConfig("profile.gender",       PROFILE_DEFAULTS.gender),
+    startWeight:  await getConfig("profile.startWeight",  PROFILE_DEFAULTS.startWeight),
+    startDate:    await getConfig("profile.startDate",    PROFILE_DEFAULTS.startDate),
+    targetWeight: await getConfig("profile.targetWeight", PROFILE_DEFAULTS.targetWeight),
   };
 }
 
@@ -242,6 +441,7 @@ async function saveSetup() {
   const dob = document.getElementById("setupDob").value;
   const height = parseInt(document.getElementById("setupHeight").value) || 165;
   const startWeight = parseFloat(document.getElementById("setupStartWeight").value);
+  const targetWeight = parseFloat(document.getElementById("setupTargetWeight").value) || PROFILE_DEFAULTS.targetWeight;
   const startDate = document.getElementById("setupStartDate").value || dateKey(new Date());
 
   if (!name || !dob || !startWeight) {
@@ -253,6 +453,7 @@ async function saveSetup() {
   await setConfig("profile.dob", dob);
   await setConfig("profile.height", height);
   await setConfig("profile.startWeight", startWeight);
+  await setConfig("profile.targetWeight", targetWeight);
   await setConfig("profile.startDate", startDate);
 
   // Pre-carica il peso di partenza come prima misurazione
@@ -261,6 +462,18 @@ async function saveSetup() {
     const ts = new Date(startDate).getTime();
     await put(STORES.weight, { ts, kg: startWeight });
   }
+
+  // Pre-carica gli esami clinici di base se nessuno presente
+  const existingLabs = await getAll(STORES.labs);
+  if (!existingLabs.length) {
+    for (const l of SEED_LABS) {
+      await put(STORES.labs, { ts: new Date(l.date).getTime(), marker: l.marker, value: l.value, unit: l.unit });
+    }
+  }
+
+  // Acqua: default 10 bicchieri/die per calcoli renali (se non gia impostato)
+  const wg = await getConfig("waterGoal", null);
+  if (wg == null) await setConfig("waterGoal", 10);
 
   document.getElementById("setupModal").classList.add("hidden");
   renderHome();
@@ -347,11 +560,44 @@ function closePortionPicker() {
 
 async function logFood(portion) {
   if (!pickerCat) return;
-  await put(STORES.food, { ts: Date.now(), category: pickerCat, portion });
+  const loggedCat = pickerCat;
+  await put(STORES.food, { ts: Date.now(), category: loggedCat, portion });
   closePortionPicker();
+
+  // Tip ossalati: avviso immediato → ricorda idratazione
+  if (loggedCat === "ossalati") {
+    showToast("Ossalati registrati: bevi un grande bicchiere d'acqua adesso e nelle prossime ore (calcoli renali).");
+  }
+
+  // Tip combo ferro+vitC + avviso te/caffe lontano dai pasti
+  if (["legumi", "uova", "pesce", "carne_bianca"].includes(loggedCat)) {
+    const today = dateKey(new Date());
+    const foods = await getAll(STORES.food);
+    const hasVitC = foods.some((f) => tsDateKey(f.ts) === today && ["frutta", "verdura"].includes(f.category));
+    if (!hasVitC) {
+      showToast("Ottimo per il ferro. Aggiungi vit C (limone, agrumi, kiwi, peperoni) e NIENTE te/caffe/latte per almeno 1h — bloccano l'assorbimento.");
+    } else {
+      showToast("Ricorda: niente te, caffe o latte entro 1h dal pasto — bloccano l'assorbimento del ferro.");
+    }
+  }
+
   // Aggiorna immediatamente conteggio pasti Home + insight + reminders
   await renderHome();
   await renderInsight();
+}
+
+function showToast(text, ms = 4500) {
+  let el = document.getElementById("toast");
+  if (!el) {
+    el = document.createElement("div");
+    el.id = "toast";
+    el.className = "fixed left-4 right-4 bottom-24 z-[70] bg-on-surface text-surface rounded-xl p-4 text-sm soft-card transition-opacity";
+    document.body.appendChild(el);
+  }
+  el.textContent = text;
+  el.style.opacity = "1";
+  clearTimeout(showToast._t);
+  showToast._t = setTimeout(() => { el.style.opacity = "0"; }, ms);
 }
 
 async function renderWater() {
@@ -444,7 +690,7 @@ const CATEGORY_GROUPS = {
   moderate: { label: "Con moderazione", icon: "balance", color: "text-primary",
               ids: ["uova", "carne_bianca", "latticini"] },
   limit: { label: "Da limitare/evitare", icon: "trending_down", color: "text-error",
-           ids: ["cereali_raf", "carne_rossa", "dolci", "alcol", "snack_salati"] },
+           ids: ["cereali_raf", "carne_rossa", "dolci", "alcol", "snack_salati", "ossalati"] },
 };
 
 function statusFor(target, real, isLimit) {
@@ -705,7 +951,7 @@ async function renderWeight() {
       <div class="flex justify-between text-[10px] text-on-surface-variant mt-1">
         <span>18.5</span><span>25</span><span>30</span><span>40</span>
       </div>
-      <p class="text-xs text-on-surface-variant mt-2">Altezza: ${profile.height} cm · Età: ${computeAge(profile.dob)} anni</p>
+      <p class="text-xs text-on-surface-variant mt-2">Altezza: ${profile.height} cm · Età: ${computeAge(profile.dob)} anni${profile.targetWeight ? ` · Target: <strong class="text-primary">${profile.targetWeight} kg</strong>` : ""}</p>
     `;
   }
 
@@ -866,23 +1112,83 @@ async function renderLabs() {
   el.innerHTML = Object.entries(byMarker).map(([marker, vals]) => {
     vals.sort((a, b) => a.ts - b.ts);
     const last = vals[vals.length - 1];
+    const status = labStatus(marker, last.value);
+    const range = LAB_RANGES[marker];
     let trend = "";
     if (vals.length >= 2) {
       const prev = vals[vals.length - 2];
       const diff = last.value - prev.value;
-      trend = diff > 0 ? `<span class="text-secondary">↑ ${(+diff.toFixed(2))}</span>`
-            : diff < 0 ? `<span class="text-tertiary">↓ ${Math.abs(+diff.toFixed(2))}</span>`
-            : `<span class="text-on-surface-variant">→</span>`;
+      // Per marker dove "più alto è meglio" (es. Vit D, HDL), una salita è positiva
+      const goingUp = diff > 0;
+      const positive = range ? (range.higherIsBetter ? goingUp : !goingUp) : null;
+      const color = positive == null ? "text-on-surface-variant"
+                  : positive ? "text-tertiary" : "text-secondary";
+      trend = `<span class="${color}">${goingUp ? "↑" : diff < 0 ? "↓" : "→"} ${Math.abs(+diff.toFixed(2))}</span>`;
     }
     const history = vals.map((v) => `${new Date(v.ts).toLocaleDateString("it-IT")}: ${v.value}${v.unit ? " " + v.unit : ""}`).join(" • ");
-    return `<div class="border border-outline-variant/30 rounded-lg p-3">
-      <div class="flex justify-between items-baseline">
+    const rangeText = range
+      ? (range.onlyMax ? `≤ ${range.max} ${range.unit}` : `${range.min}–${range.max} ${range.unit}`)
+      : "";
+    const statusBadge = status
+      ? `<span class="text-xs font-bold px-2 py-0.5 rounded-full ${status.bg} ${status.color}">${status.icon} ${status.text}</span>`
+      : "";
+    return `<div class="border ${status && !status.ok ? 'border-error/40' : 'border-outline-variant/30'} rounded-lg p-3">
+      <div class="flex justify-between items-baseline gap-2">
         <span class="font-semibold text-on-surface">${marker}</span>
-        <span class="text-sm">${last.value}${last.unit ? " " + last.unit : ""} ${trend}</span>
+        ${statusBadge}
       </div>
-      <p class="text-xs text-on-surface-variant mt-1">${history}</p>
+      <div class="flex justify-between items-baseline mt-1">
+        <span class="text-xs text-on-surface-variant">${rangeText}</span>
+        <span class="text-sm font-bold">${last.value}${last.unit ? " " + last.unit : ""} ${trend}</span>
+      </div>
+      ${vals.length > 1 ? `<p class="text-xs text-on-surface-variant mt-2">${history}</p>` : ""}
     </div>`;
   }).join("");
+}
+
+function renderExamsTodo() {
+  const el = document.getElementById("examsTodo");
+  if (!el) return;
+  el.innerHTML = EXAMS_TODO.map((e) => `
+    <div class="flex items-start gap-3 p-3 rounded-lg bg-error-container/40 border-l-4 border-error">
+      <span class="material-symbols-outlined text-error text-base mt-0.5">assignment_late</span>
+      <div class="flex-1">
+        <p class="font-semibold text-on-surface text-sm">${e.label}</p>
+        <p class="text-xs text-on-surface-variant mt-0.5">${e.why}</p>
+      </div>
+    </div>`).join("");
+}
+
+function renderPrescribedNotTaken() {
+  const el = document.getElementById("prescribedNotTaken");
+  if (!el) return;
+  el.innerHTML = PRESCRIBED_NOT_TAKEN.map((p) => `
+    <div class="flex items-start gap-3 p-3 rounded-lg bg-surface-container-low border-l-4 border-secondary">
+      <span class="material-symbols-outlined text-secondary text-base mt-0.5">pill_off</span>
+      <div class="flex-1">
+        <p class="font-semibold text-on-surface text-sm">${p.label}</p>
+        <p class="text-xs text-on-surface-variant">${p.dose} — ${p.by}</p>
+        <p class="text-xs italic text-secondary mt-0.5">${p.status}</p>
+      </div>
+    </div>`).join("");
+}
+
+function renderClinicalProfile() {
+  const el = document.getElementById("clinicalProfile");
+  if (!el) return;
+  const sevColor = { high: "border-error bg-error-container/30", med: "border-secondary bg-secondary-fixed/50", low: "border-tertiary bg-tertiary/10", info: "border-outline-variant bg-surface-container-low" };
+  const sevLabel = { high: "PRIORITA ALTA", med: "ATTENZIONE", low: "MANTIENI", info: "INFO" };
+  el.innerHTML = CLINICAL_PROFILE.map((c) => `
+    <details class="border-l-4 ${sevColor[c.severity]} rounded-lg p-3">
+      <summary class="flex items-center justify-between cursor-pointer">
+        <div class="flex items-center gap-2">
+          <span class="material-symbols-outlined text-on-surface text-base">${c.icon}</span>
+          <span class="font-semibold text-on-surface text-sm">${c.label}</span>
+        </div>
+        <span class="text-[10px] font-bold tracking-wider text-on-surface-variant">${sevLabel[c.severity]}</span>
+      </summary>
+      <p class="text-xs text-on-surface-variant mt-2 leading-relaxed">${c.dietImpact}</p>
+    </details>`).join("");
 }
 
 function renderHealth() {
@@ -890,6 +1196,9 @@ function renderHealth() {
   renderCycle();
   renderSymptomHistory();
   renderLabs();
+  renderClinicalProfile();
+  renderExamsTodo();
+  renderPrescribedNotTaken();
 }
 
 async function renderSymptomHistory() {
@@ -968,6 +1277,59 @@ async function computeInsight() {
       if (diffs.length) avgLen = Math.round(diffs.reduce((a, b) => a + b, 0) / diffs.length);
     }
     phase = day <= 5 ? "mestruale" : day <= 13 ? "follicolare" : day === 14 ? "ovulazione" : day <= avgLen ? "luteale" : "ritardo";
+  }
+
+  // Regola PRIORITARIA — Sideropenia: settimana senza fonti di ferro
+  const ironSources = (counts.legumi || 0) + (counts.pesce || 0) + (counts.uova || 0) + (counts.carne_bianca || 0);
+  if (ironSources < 4) {
+    return "Ferro basso da quadro clinico: questa settimana poche fonti di ferro. Pianifica zuppa di lenticchie con limone, o salmone con peperoni — la vitamina C triplica l'assorbimento.";
+  }
+
+  // Combo ferro+vitC del giorno: se hai mangiato legumi/uova/pesce ma niente frutta/verdura oggi
+  const today0 = dateKey(new Date());
+  const todayFood = foods.filter((f) => tsDateKey(f.ts) === today0);
+  const todayIron = todayFood.some((f) => ["legumi", "uova", "pesce", "carne_bianca"].includes(f.category));
+  const todayVitC = todayFood.some((f) => ["frutta", "verdura"].includes(f.category));
+  if (todayIron && !todayVitC && new Date().getHours() >= 15) {
+    return "Hai mangiato una fonte di ferro oggi — abbinaci agrumi, kiwi, peperoni o un'insalata con limone per moltiplicare l'assorbimento.";
+  }
+
+  // Ferro EME vs NON-EME: settimana senza ferro EME (assorbimento 15-35% vs 2-20%)
+  const eme = (counts.carne_bianca || 0) + (counts.pesce || 0);
+  const nonEme = (counts.legumi || 0) + (counts.uova || 0);
+  if (nonEme > 0 && eme < 1) {
+    return "Questa settimana solo ferro non-eme (legumi, uova). Aggiungi anche pesce, tacchino o manzo magro: il ferro eme si assorbe 3-5 volte di più.";
+  }
+
+  // Pasta a cena → digeribilita in pre-menopausa
+  const nowH = new Date().getHours();
+  if (nowH >= 19 && nowH <= 22 && todayFood.some((f) => f.category === "cereali_int" && new Date(f.ts).getHours() >= 18)) {
+    // no return: solo tip via toast? Meglio insight solo se persistente. Skip.
+  }
+
+  // Pattern pasta serale ricorrente negli ultimi 3 giorni
+  const last3 = foods.filter((f) => f.ts >= Date.now() - 3 * 86400000);
+  const pastaCena3 = last3.filter((f) => f.category === "cereali_int" && new Date(f.ts).getHours() >= 19).length;
+  if (pastaCena3 >= 2) {
+    return "Ultimi giorni pasta/cereali la sera: per digeribilita in pre-menopausa meglio 1 fetta di pane integrale o patate al vapore, pasta a pranzo.";
+  }
+
+  // Regola PRIORITARIA — LDL alto: troppa carne rossa o cereali raffinati
+  if ((counts.carne_rossa || 0) >= 1 || (counts.cereali_raf || 0) > 3) {
+    return "Il tuo LDL e' alto da anni. Sostituisci carne rossa con legumi o pesce, e pane bianco con avena/farro — beta-glucani e fibre solubili lavorano sul colesterolo.";
+  }
+
+  // Regola PRIORITARIA — Ossalati: oltre soglia → reminder calcoli renali
+  if ((counts.ossalati || 0) > 2) {
+    return "Hai mangiato parecchi cibi ricchi di ossalati questa settimana (spinaci crudi, te nero, cioccolato, frutta secca in eccesso). Per i calcoli renali: idratati di piu e abbinali sempre a calcio (yogurt, formaggio magro) per ridurre l'assorbimento.";
+  }
+
+  // Regola PRIORITARIA — Calcoli renali: idratazione costante
+  const goal0 = await getConfig("waterGoal", 10);
+  const todayGlasses = waters.filter((w) => tsDateKey(w.ts) === dateKey(new Date()))
+    .reduce((s, w) => s + (w.glasses || 1), 0);
+  if (todayGlasses < goal0 * 0.5 && new Date().getHours() >= 14) {
+    return "Per i calcoli renali l'idratazione e' la prima medicina. Oggi sei sotto meta' obiettivo — un grande bicchiere ora, poi un altro tra un'ora.";
   }
 
   // Regola 1 — Pre-mestruo: ferritina/ferro suggerito
@@ -1058,10 +1420,28 @@ async function computeInsight() {
     return "Il Sideral è andato un po' a singhiozzo questa settimana. Provo a ricordartelo nei promemoria — la costanza fa la differenza per il ferro.";
   }
 
-  // Regola 13 — BMI sopra range (info dati)
+  // Regola 13 — Peso target / BMI sopra range
   if (weights.length) {
     const profile = await getProfile();
-    const bmi = computeBMI(weights[weights.length - 1].kg, profile.height);
+    const lastKg = weights[weights.length - 1].kg;
+    const bmi = computeBMI(lastKg, profile.height);
+    const target = profile.targetWeight || 60;
+    const toGo = +(lastKg - target).toFixed(1);
+    if (toGo > 0.5 && weights.length >= 2) {
+      // Calcola velocita media (kg/sett) ultimi 30 gg
+      const cutoff = Date.now() - 30 * 86400000;
+      const recent = weights.filter((w) => w.ts >= cutoff).sort((a, b) => a.ts - b.ts);
+      if (recent.length >= 2) {
+        const dKg = recent[recent.length - 1].kg - recent[0].kg;
+        const dDays = Math.max(1, (recent[recent.length - 1].ts - recent[0].ts) / 86400000);
+        const kgPerWeek = (dKg / dDays) * 7;
+        if (kgPerWeek < -0.1) {
+          const weeks = Math.ceil(toGo / Math.abs(kgPerWeek));
+          return `Stai scendendo ~${Math.abs(kgPerWeek).toFixed(1)} kg/settimana. Al ritmo attuale arrivi a ${target} kg in ~${weeks} settimane. Continua cosi.`;
+        }
+      }
+      return `Sei a ${toGo} kg dal tuo target di ${target} kg. Niente fretta: 0.5 kg/settimana e' un ritmo sostenibile e sano.`;
+    }
     if (bmi >= 25 && bmi < 30) {
       return "Il BMI è sopra il range sano. Niente diete drastiche: continua con il piano antinfiammatorio, riduci porzioni di cereali raffinati e dolci, aumenta verdure.";
     }
@@ -1192,10 +1572,20 @@ async function computeReminders() {
   const now = new Date();
   const hour = now.getHours();
 
-  // Sideral non preso e siamo dopo le 9
+  // Integratori — promemoria differenziati per timing/modalita
+  // Sideral: stomaco vuoto al mattino + vitamina C (succo limone/spremuta). Mai con te/caffe/latte.
   const sideralTaken = await isSupplementTaken("sideral", today);
-  if (!sideralTaken && hour >= 9) {
-    out.push({ icon: "medication", text: "Ricorda il Sideral di oggi — meglio a stomaco vuoto con un po' di vitamina C." });
+  if (!sideralTaken && hour >= 7 && hour < 11) {
+    out.push({ icon: "medication", text: "Sideral: prendilo ora a stomaco vuoto con succo di limone o spremuta. Aspetta 30 min prima di caffe/the/latte." });
+  } else if (!sideralTaken && hour >= 11 && hour < 20) {
+    out.push({ icon: "medication", text: "Sideral non preso oggi. Se ancora in tempo, lontano dai pasti (almeno 1h) con vitamina C." });
+  }
+
+  // Drox (Vit D 2000 UI): liposolubile, assorbe con i grassi → con pranzo o cena
+  const droxTaken = await isSupplementTaken("drox", today);
+  if (!droxTaken && hour >= 12 && hour < 22) {
+    const when = hour < 15 ? "a pranzo" : "a cena";
+    out.push({ icon: "wb_sunny", text: `Drox ${when} — assumi con un cucchiaio di EVO o pesce/uova per assorbire meglio la Vit D.` });
   }
 
   // Acqua poca per l'orario corrente (target proporzionale)
@@ -1313,7 +1703,29 @@ async function buildMarkdownExport() {
   const counts = {};
   for (const f of weekFood) counts[f.category] = (counts[f.category] || 0) + (PORTION_FACTOR[f.portion] || 1);
 
+  const profile = await getProfile();
   let md = `# Diario Irida — ultimi 7 giorni\n\nData export: ${new Date().toLocaleString("it-IT")}\n\n`;
+
+  // Profilo anagrafico + obiettivo
+  if (profile.name || profile.dob) {
+    const age = profile.dob ? computeAge(profile.dob) : "?";
+    const lastW = weights.length ? weights[weights.length - 1].kg : null;
+    const bmi = lastW ? computeBMI(lastW, profile.height) : null;
+    md += `## Profilo\n\n`;
+    md += `- ${profile.name || "—"}, ${age} anni, ${profile.height} cm\n`;
+    if (lastW) md += `- Peso attuale: **${lastW} kg** (BMI ${bmi?.toFixed(1)} — ${bmiCategory(bmi).label})\n`;
+    if (profile.targetWeight) md += `- Peso target: **${profile.targetWeight} kg**\n`;
+    md += `\n`;
+  }
+
+  // Profilo clinico
+  md += `## Profilo clinico\n\n`;
+  for (const c of CLINICAL_PROFILE) {
+    const tag = c.severity === "high" ? "🔴" : c.severity === "med" ? "🟠" : c.severity === "low" ? "🟢" : "ℹ️";
+    md += `- ${tag} **${c.label}** — ${c.dietImpact}\n`;
+  }
+  md += `\n`;
+
 
   md += `## Diario alimentare (per giorno)\n\n`;
   Object.keys(dayMap).sort().forEach((k) => {
@@ -1366,21 +1778,34 @@ async function buildMarkdownExport() {
   }
 
   if (labs.length) {
-    md += `## Esami del sangue\n\n`;
+    md += `## Esami del sangue (con stato)\n\n`;
     const byMarker = {};
     for (const l of labs) {
       if (!byMarker[l.marker]) byMarker[l.marker] = [];
       byMarker[l.marker].push(l);
     }
+    md += `| Marker | Ultimo | Range | Stato | Storico |\n|---|---|---|---|---|\n`;
     for (const [m, vals] of Object.entries(byMarker)) {
-      md += `**${m}**: ${vals.map((v) => `${new Date(v.ts).toLocaleDateString("it-IT")}=${v.value}${v.unit ? v.unit : ""}`).join(", ")}\n`;
+      vals.sort((a, b) => a.ts - b.ts);
+      const last = vals[vals.length - 1];
+      const r = LAB_RANGES[m];
+      const status = labStatus(m, last.value);
+      const rangeText = r ? (r.onlyMax ? `≤${r.max}` : `${r.min}–${r.max}`) + ` ${r.unit}` : "—";
+      const statusText = status ? (status.ok ? "✅ in range" : `🔴 ${status.text}`) : "—";
+      const history = vals.map((v) => `${new Date(v.ts).toLocaleDateString("it-IT")}=${v.value}`).join(", ");
+      md += `| ${m} | **${last.value}${last.unit ? " " + last.unit : ""}** | ${rangeText} | ${statusText} | ${history} |\n`;
     }
     md += `\n`;
   }
 
   md += `## Richiesta per Claude\n\n`;
-  md += `Analizza il diario di Irida sopra. Stile: empatico, non giudicante, suggerimenti pratici e concreti.\n`;
-  md += `Considera la fase del ciclo se rilevante. Evidenzia pattern, correlazioni, e 2-3 azioni semplici per la prossima settimana.\n`;
+  md += `Analizza il diario di Irida sopra alla luce del suo **profilo clinico** (sideropenia, vit D bassa, LDL alto, sovrappeso, ANA+, calcoli renali, pre-menopausa, melanoma).\n\n`;
+  md += `Stile: empatico, non giudicante, concreto. Considera la fase del ciclo se rilevante.\n\n`;
+  md += `Output desiderato:\n`;
+  md += `1. **3 pattern principali** osservati nel diario (anche correlazioni cibo↔sintomi)\n`;
+  md += `2. **Top 3 priorita** per la prossima settimana, ordinate per impatto sul quadro clinico (ferro, LDL, vit D, peso)\n`;
+  md += `3. **Esempio di 2 pasti concreti** che coprono piu obiettivi contemporaneamente (es. ferro+vit C+omega-3)\n`;
+  md += `4. **Segnali a cui prestare attenzione** dai sintomi registrati\n`;
 
   return md;
 }
@@ -1418,20 +1843,211 @@ function bindExportEvents() {
   document.getElementById("exportJson").addEventListener("click", downloadJson);
 }
 
+// ---------------- Esercizio ----------------
+
+function currentExercisePhaseKey(startDateIso) {
+  if (!startDateIso) return "base";
+  const start = new Date(startDateIso);
+  const daysElapsed = Math.floor((Date.now() - start.getTime()) / 86400000);
+  const week = Math.floor(daysElapsed / 7) + 1;
+  if (week <= 4) return "base";
+  if (week <= 8) return "progression";
+  return "maintenance";
+}
+
+function todayItalianDayLabel(d = new Date()) {
+  // 0=Dom, 1=Lun ... in JS
+  return ["Dom", "Lun", "Mar", "Mer", "Gio", "Ven", "Sab"][d.getDay()];
+}
+
+async function isExerciseDone(dateStr, activityKey) {
+  return new Promise((res) => {
+    const r = tx(STORES.exercise).get(`${dateStr}:${activityKey}`);
+    r.onsuccess = () => res(!!r.result);
+    r.onerror = () => res(false);
+  });
+}
+
+async function toggleExercise(dateStr, activityKey, meta = {}) {
+  const id = `${dateStr}:${activityKey}`;
+  const existing = await new Promise((res) => {
+    const r = tx(STORES.exercise).get(id);
+    r.onsuccess = () => res(r.result);
+    r.onerror = () => res(null);
+  });
+  if (existing) {
+    await new Promise((res) => {
+      const r = tx(STORES.exercise, "readwrite").delete(id);
+      r.onsuccess = res;
+    });
+    return false;
+  }
+  await put(STORES.exercise, { id, date: dateStr, activityKey, ts: Date.now(), ...meta });
+  return true;
+}
+
+async function exerciseStreak() {
+  // Giorni consecutivi in cui almeno un'attivita non-riposo e' stata fatta
+  const all = await getAll(STORES.exercise);
+  const done = new Set(all.filter((e) => e.activityKey !== "rest").map((e) => e.date));
+  let streak = 0;
+  const today = startOfDay(new Date());
+  let cursor = new Date(today);
+  if (!done.has(dateKey(cursor))) cursor.setDate(cursor.getDate() - 1);
+  while (done.has(dateKey(cursor))) {
+    streak++;
+    cursor.setDate(cursor.getDate() - 1);
+  }
+  return streak;
+}
+
+async function renderExercise() {
+  const startDate = await getConfig("exerciseStartDate", null);
+  const phaseKey = await getConfig("exercisePhaseOverride", null) || currentExercisePhaseKey(startDate);
+  const phase = EXERCISE_PHASES[phaseKey];
+
+  // Header
+  const headerEl = document.getElementById("exercisePhaseHeader");
+  if (headerEl) {
+    const week = startDate ? Math.floor((Date.now() - new Date(startDate).getTime()) / (7 * 86400000)) + 1 : "—";
+    const streak = await exerciseStreak();
+    headerEl.innerHTML = `
+      <div class="flex items-end justify-between mb-2">
+        <div>
+          <p class="text-label-caps uppercase text-on-surface-variant">${phase.weeks} · settimana ${week}</p>
+          <p class="font-serif text-title-md text-primary">${phase.label}</p>
+        </div>
+        ${streak > 0 ? `<div class="text-right">
+          <p class="font-serif text-2xl text-tertiary leading-none">🔥 ${streak}</p>
+          <p class="text-[10px] text-on-surface-variant uppercase tracking-wider">gg di fila</p>
+        </div>` : ""}
+      </div>
+      <p class="text-sm text-on-surface-variant">${phase.description}</p>
+    `;
+  }
+
+  // Attivita di OGGI
+  const todayLabel = todayItalianDayLabel();
+  const todayEntry = phase.schedule.find((s) => s.day === todayLabel);
+  const todayEl = document.getElementById("exerciseToday");
+  const today = dateKey(new Date());
+  if (todayEl && todayEntry) {
+    const items = await Promise.all(todayEntry.activities.map(async (a) => {
+      const done = await isExerciseDone(today, a.key);
+      return { ...a, done };
+    }));
+    todayEl.innerHTML = items.map((a) => a.key === "rest" ? `
+      <div class="p-4 rounded-lg bg-surface-container-low text-center">
+        <span class="material-symbols-outlined text-on-surface-variant text-3xl">${a.icon}</span>
+        <p class="font-serif text-title-md text-on-surface mt-1">${a.label}</p>
+        <p class="text-xs text-on-surface-variant">Recupero attivo consigliato</p>
+      </div>
+    ` : `
+      <button data-act="${a.key}" data-dur="${a.duration}" class="exerciseTodayBtn w-full flex items-center justify-between gap-3 p-4 rounded-xl ${a.done ? 'bg-tertiary/15 border-2 border-tertiary' : 'bg-surface-container-low border-2 border-transparent'} active:scale-[0.98] transition-all">
+        <div class="flex items-center gap-3">
+          <span class="material-symbols-outlined ${a.done ? 'text-tertiary' : 'text-primary'} text-3xl" style="font-variation-settings:'FILL' ${a.done ? 1 : 0};">${a.done ? 'check_circle' : a.icon}</span>
+          <div class="text-left">
+            <p class="font-semibold text-on-surface">${a.label}</p>
+            <p class="text-xs text-on-surface-variant">${a.duration} min${a.note ? ' · ' + a.note : ''}</p>
+          </div>
+        </div>
+        <span class="text-xs font-bold uppercase tracking-wider ${a.done ? 'text-tertiary' : 'text-on-surface-variant'}">${a.done ? '✓ FATTO' : 'TAP'}</span>
+      </button>
+    `).join("");
+    todayEl.querySelectorAll(".exerciseTodayBtn").forEach((btn) => {
+      btn.addEventListener("click", async () => {
+        await toggleExercise(today, btn.dataset.act, { duration: parseInt(btn.dataset.dur) });
+        renderExercise();
+      });
+    });
+  }
+
+  // Settimana
+  const weekEl = document.getElementById("exerciseWeek");
+  if (weekEl) {
+    const rows = await Promise.all(phase.schedule.map(async (s) => {
+      const isToday = s.day === todayLabel;
+      const actList = await Promise.all(s.activities.map(async (a) => {
+        const done = a.key === "rest" ? null : await isExerciseDone(today, a.key);
+        return { a, done };
+      }));
+      return { s, isToday, actList };
+    }));
+    weekEl.innerHTML = rows.map(({ s, isToday, actList }) => `
+      <div class="flex items-center gap-3 py-2 border-b border-outline-variant/20 last:border-0 ${isToday ? 'bg-primary-fixed/30 -mx-2 px-2 rounded-lg' : ''}">
+        <span class="text-xs font-bold w-10 ${isToday ? 'text-primary' : 'text-on-surface-variant'}">${s.day}</span>
+        <div class="flex-1 flex flex-col gap-1">
+          ${actList.map(({ a, done }) => `
+            <div class="flex items-center gap-2 text-sm">
+              <span class="material-symbols-outlined text-base ${done === true ? 'text-tertiary' : done === false ? 'text-on-surface-variant' : 'text-outline'}">${done === true ? 'check_circle' : a.icon}</span>
+              <span class="${done === true ? 'text-tertiary line-through' : 'text-on-surface'}">${a.label}</span>
+              ${a.duration ? `<span class="text-xs text-on-surface-variant">· ${a.duration} min</span>` : ""}
+            </div>
+          `).join("")}
+        </div>
+      </div>
+    `).join("");
+  }
+
+  // Regole per Irida
+  const rulesEl = document.getElementById("exerciseRules");
+  if (rulesEl) {
+    rulesEl.innerHTML = EXERCISE_RULES.map((r) => `
+      <div class="flex items-start gap-3 p-3 rounded-lg bg-surface-container-low">
+        <span class="material-symbols-outlined text-primary text-base mt-0.5">${r.icon}</span>
+        <p class="text-sm text-on-surface flex-1">${r.text}</p>
+      </div>`).join("");
+  }
+
+  // Selector fase (per override)
+  const selectEl = document.getElementById("exercisePhaseSelect");
+  if (selectEl) {
+    selectEl.value = phaseKey;
+  }
+}
+
+async function setExerciseStartDateIfEmpty() {
+  const existing = await getConfig("exerciseStartDate", null);
+  if (!existing) await setConfig("exerciseStartDate", dateKey(new Date()));
+}
+
+function bindExerciseEvents() {
+  const sel = document.getElementById("exercisePhaseSelect");
+  if (sel) {
+    sel.addEventListener("change", async (e) => {
+      await setConfig("exercisePhaseOverride", e.target.value);
+      renderExercise();
+    });
+  }
+  const resetBtn = document.getElementById("exerciseResetBtn");
+  if (resetBtn) {
+    resetBtn.addEventListener("click", async () => {
+      if (confirm("Reset del programma esercizio? Ricomincia dalla Fase Base, oggi giorno 1.")) {
+        await setConfig("exerciseStartDate", dateKey(new Date()));
+        await setConfig("exercisePhaseOverride", null);
+        renderExercise();
+      }
+    });
+  }
+}
+
 // ---------------- Init ----------------
 
 openDB().then(async () => {
   await maybeShowSetup();
+  await setExerciseStartDateIfEmpty();
   document.getElementById("setupSaveBtn")?.addEventListener("click", saveSetup);
   renderCategoryChips();
   renderSymptomChips();
   bindDiaryEvents();
   bindHealthEvents();
   bindExportEvents();
+  bindExerciseEvents();
   route();
   window.addEventListener("hashchange", () => {
     if (location.hash === "#diary") renderDiary();
     if (location.hash === "#health") renderHealth();
+    if (location.hash === "#exercise") renderExercise();
   });
 });
 

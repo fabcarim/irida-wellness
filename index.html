@@ -343,6 +343,11 @@
             class="w-full mt-1 px-3 py-2.5 rounded-lg border border-outline-variant bg-surface-container-low" />
         </label>
         <label class="block">
+          <span class="text-label-caps uppercase text-on-surface-variant">Peso target (kg)</span>
+          <input id="setupTargetWeight" type="number" step="0.1" min="30" max="200" value="60"
+            class="w-full mt-1 px-3 py-2.5 rounded-lg border border-outline-variant bg-surface-container-low" />
+        </label>
+        <label class="block">
           <span class="text-label-caps uppercase text-on-surface-variant">Data di partenza</span>
           <input id="setupStartDate" type="date"
             class="w-full mt-1 px-3 py-2.5 rounded-lg border border-outline-variant bg-surface-container-low" />
@@ -392,23 +397,15 @@
         <span class="material-symbols-outlined text-primary mt-0.5">wb_twilight</span>
         <div class="flex-1">
           <p class="font-semibold text-on-surface text-sm">Colazione</p>
-          <p class="text-sm text-on-surface-variant">Avena o pane integrale con burro di mandorle e frutti rossi. Tè verde o caffè senza zucchero. Yogurt greco o kefir 2-3 volte/settimana.</p>
-        </div>
-      </div>
-
-      <div class="flex gap-3 mb-3 p-3 rounded-lg bg-surface-container-low">
-        <span class="material-symbols-outlined text-primary mt-0.5">light_mode</span>
-        <div class="flex-1">
-          <p class="font-semibold text-on-surface text-sm">Spuntino mattina</p>
-          <p class="text-sm text-on-surface-variant">Una manciata di noci/mandorle (≈30g) o frutta fresca. Mai prodotti da forno industriali.</p>
+          <p class="text-sm text-on-surface-variant">Yogurt bianco o kefir + fiocchi d'avena + kiwi (o arancia) + 3-4 noci. Oppure: pane integrale + uovo sodo + frutta. <strong class="text-error">Caffè/tè almeno 30 min dopo</strong> (bloccano il ferro).</p>
         </div>
       </div>
 
       <div class="flex gap-3 mb-3 p-3 rounded-lg bg-surface-container-low">
         <span class="material-symbols-outlined text-primary mt-0.5">restaurant</span>
         <div class="flex-1">
-          <p class="font-semibold text-on-surface text-sm">Pranzo (piatto unico)</p>
-          <p class="text-sm text-on-surface-variant">½ piatto verdure (cotte+crude, includi crucifera), ¼ cereale integrale o legumi, ¼ proteina (pesce/uova/legumi). 2 cucchiai EVO a crudo. Spezie: curcuma, zenzero, rosmarino.</p>
+          <p class="font-semibold text-on-surface text-sm">Pranzo</p>
+          <p class="text-sm text-on-surface-variant">Primo: pasta/riso/farro/orzo <strong>integrale</strong> (70-80g). Secondo: manzo/pollo/pesce/uova <em>o</em> legumi (mai insieme). Verdure <strong>al vapore</strong> o crude con limone + EVO. 1 frutto.</p>
         </div>
       </div>
 
@@ -416,7 +413,7 @@
         <span class="material-symbols-outlined text-primary mt-0.5">coffee</span>
         <div class="flex-1">
           <p class="font-semibold text-on-surface text-sm">Spuntino pomeriggio</p>
-          <p class="text-sm text-on-surface-variant">Frutta + cioccolato fondente ≥85% (1 quadretto), oppure hummus con verdure.</p>
+          <p class="text-sm text-on-surface-variant">30g frutta secca (mandorle o noci) + 1 frutto. Oppure yogurt bianco.</p>
         </div>
       </div>
 
@@ -424,9 +421,23 @@
         <span class="material-symbols-outlined text-primary mt-0.5">dinner_dining</span>
         <div class="flex-1">
           <p class="font-semibold text-on-surface text-sm">Cena</p>
-          <p class="text-sm text-on-surface-variant">Più leggera: pesce azzurro (salmone, sardine, sgombro) o legumi con verdure abbondanti. Evita carboidrati raffinati la sera.</p>
+          <p class="text-sm text-on-surface-variant">Pesce grasso (salmone, sgombro, sardine <strong>con lisca</strong> = calcio) 2-3 sere/sett, altrimenti carne magra o legumi. Verdure abbondanti con limone. 1 fetta pane integrale o patate al vapore. <strong class="text-error">No pasta la sera</strong> (digeribilità).</p>
         </div>
       </div>
+    </div>
+
+    <!-- Da privilegiare ogni giorno -->
+    <div class="bg-tertiary/10 rounded-xl p-5 soft-card mb-stack-md border-l-4 border-tertiary">
+      <h3 class="font-serif text-title-md text-tertiary mb-3">✓ Ogni giorno</h3>
+      <ul class="text-sm space-y-1.5 text-on-surface">
+        <li>• 1 fonte di <strong>ferro forte</strong> (manzo o legumi)</li>
+        <li>• 1 fonte di <strong>vitamina C</strong> a ogni pasto con ferro (limone, peperoni, kiwi, agrumi)</li>
+        <li>• 1-2 porzioni <strong>latticini</strong> (yogurt/kefir) — calcio per ossa</li>
+        <li>• 2-3 cucchiai <strong>olio EVO</strong></li>
+        <li>• 30g <strong>frutta secca</strong> (noci, mandorle)</li>
+        <li>• <strong>2+ litri di acqua</strong> (calcoli renali)</li>
+        <li>• Cereali <strong>sempre integrali</strong></li>
+      </ul>
     </div>
 
     <!-- Settimana antinfiammatoria -->
@@ -471,6 +482,7 @@
         <li>• <strong>Caffè</strong>: max 2/die, mai a stomaco vuoto</li>
         <li>• <strong>Sale</strong>: usa erbe e spezie</li>
         <li>• <strong>Frutta tropicale molto zuccherina</strong> (mango, ananas) → ok ma con moderazione</li>
+        <li>• <strong>Ossalati alti</strong> (spinaci crudi, bietole, rabarbaro, te nero, cioccolato in eccesso, frutta secca in quantita) → max 2 porzioni/settimana per i <em>calcoli renali</em>. Se li mangi, bevi molto e abbinali a calcio (yogurt).</li>
       </ul>
     </div>
 
@@ -529,11 +541,93 @@
     </p>
   </section>
 
+  <!-- ===== ESERCIZIO ===== -->
+  <section id="view-exercise" class="view">
+    <div class="mb-stack-md">
+      <h2 class="font-serif text-headline-lg-mobile text-on-surface mb-1">Esercizio</h2>
+      <p class="text-on-surface-variant text-sm">Programma progressivo a basso impatto — costruito sul tuo quadro.</p>
+    </div>
+
+    <!-- Fase corrente -->
+    <div class="bg-surface-container-lowest rounded-2xl p-5 soft-card mb-stack-md border-2 border-primary/20">
+      <div id="exercisePhaseHeader"></div>
+      <div class="flex items-center gap-2 mt-4 pt-3 border-t border-outline-variant/30">
+        <label class="text-xs text-on-surface-variant flex-1">
+          Fase:
+          <select id="exercisePhaseSelect" class="ml-1 bg-surface-container-low border border-outline-variant rounded-lg px-2 py-1 text-sm">
+            <option value="base">Base (sett 1-4)</option>
+            <option value="progression">Progressione (sett 5-8)</option>
+            <option value="maintenance">Mantenimento (9+)</option>
+          </select>
+        </label>
+        <button id="exerciseResetBtn" class="text-xs text-primary font-bold underline">Reset programma</button>
+      </div>
+    </div>
+
+    <!-- Oggi -->
+    <div class="bg-surface-container-lowest rounded-xl p-5 soft-card mb-stack-md">
+      <div class="flex items-center gap-2 mb-3">
+        <span class="material-symbols-outlined text-primary">today</span>
+        <h3 class="font-serif text-title-md text-primary">Oggi</h3>
+      </div>
+      <div id="exerciseToday" class="flex flex-col gap-2"></div>
+    </div>
+
+    <!-- Settimana -->
+    <div class="bg-surface-container-lowest rounded-xl p-5 soft-card mb-stack-md">
+      <h3 class="font-serif text-title-md text-on-surface mb-3">Settimana tipo</h3>
+      <div id="exerciseWeek"></div>
+    </div>
+
+    <!-- Regole per Irida -->
+    <div class="bg-secondary-fixed rounded-xl p-5 soft-card mb-stack-md">
+      <div class="flex items-center gap-2 mb-3">
+        <span class="material-symbols-outlined text-on-secondary-container">info</span>
+        <h3 class="font-serif text-title-md text-on-secondary-container">Regole per te</h3>
+      </div>
+      <div id="exerciseRules" class="flex flex-col gap-2"></div>
+    </div>
+
+    <p class="text-xs text-on-surface-variant italic px-2 mb-stack-md">
+      Programma calibrato su tallone operato, ferro basso e artralgie. Non forzare mai — ascolta il corpo. In caso di dolore, fermati.
+    </p>
+  </section>
+
   <!-- ===== HEALTH = analitica salute ===== -->
   <section id="view-health" class="view">
     <div class="mb-stack-md">
       <h2 class="font-serif text-headline-lg-mobile text-on-surface mb-1">Salute · Analisi</h2>
       <p class="text-on-surface-variant text-sm">Peso, ciclo, esami, sintomi nel tempo.</p>
+    </div>
+
+    <!-- Profilo clinico (condizioni di Irida) -->
+    <div class="bg-surface-container-lowest rounded-xl p-5 soft-card mb-stack-md border-2 border-secondary/30">
+      <div class="flex items-center gap-2 mb-3">
+        <span class="material-symbols-outlined text-secondary">medical_information</span>
+        <h3 class="font-serif text-title-md text-secondary">Profilo clinico</h3>
+      </div>
+      <p class="text-xs text-on-surface-variant mb-3 italic">Tocca ogni voce per vedere cosa fare a tavola.</p>
+      <div id="clinicalProfile" class="flex flex-col gap-2"></div>
+    </div>
+
+    <!-- Esami da fare -->
+    <div class="bg-surface-container-lowest rounded-xl p-5 soft-card mb-stack-md">
+      <div class="flex items-center gap-2 mb-3">
+        <span class="material-symbols-outlined text-error">assignment_late</span>
+        <h3 class="font-serif text-title-md text-error">Esami da fare</h3>
+      </div>
+      <p class="text-xs text-on-surface-variant mb-3 italic">Servirebbero per calibrare meglio il piano.</p>
+      <div id="examsTodo" class="flex flex-col gap-2"></div>
+    </div>
+
+    <!-- Prescritti ma non assunti -->
+    <div class="bg-surface-container-lowest rounded-xl p-5 soft-card mb-stack-md">
+      <div class="flex items-center gap-2 mb-3">
+        <span class="material-symbols-outlined text-secondary">pill_off</span>
+        <h3 class="font-serif text-title-md text-secondary">Prescritti ma non assunti</h3>
+      </div>
+      <p class="text-xs text-on-surface-variant mb-3 italic">Da confrontare con i medici.</p>
+      <div id="prescribedNotTaken" class="flex flex-col gap-2"></div>
     </div>
 
     <!-- Peso (analitica) -->
@@ -593,13 +687,14 @@
         <input id="labMarker" list="markerList" placeholder="Marker (es. Ferritina)"
           class="px-3 py-2 rounded-lg border border-outline-variant bg-surface-container-low" />
         <datalist id="markerList">
-          <option>Emoglobina</option><option>Ferritina</option><option>Ferro</option>
-          <option>Vitamina D</option><option>Vitamina B12</option><option>TSH</option>
-          <option>FT3</option><option>FT4</option><option>Glicemia</option>
-          <option>Colesterolo Tot</option><option>HDL</option><option>LDL</option>
-          <option>Trigliceridi</option><option>Creatinina</option><option>Omocisteina</option>
-          <option>Acido Folico</option><option>Estradiolo</option><option>Progesterone</option>
-          <option>Prolattina</option><option>AMH</option>
+          <option>Ferro</option><option>Ferritina</option><option>Emoglobina</option>
+          <option>Vitamina D</option><option>Vitamina B12</option>
+          <option>Colesterolo Tot</option><option>LDL</option><option>HDL</option><option>Trigliceridi</option>
+          <option>HbA1c</option><option>Glicemia</option>
+          <option>Acido urico</option><option>Creatinina</option><option>eGFR</option>
+          <option>TSH</option><option>FT3</option><option>FT4</option>
+          <option>ANA</option><option>Omocisteina</option><option>Acido Folico</option>
+          <option>Estradiolo</option><option>Progesterone</option><option>Prolattina</option><option>AMH</option>
         </datalist>
         <input id="labValue" type="number" step="0.01" placeholder="Valore"
           class="px-3 py-2 rounded-lg border border-outline-variant bg-surface-container-low" />
@@ -616,20 +711,24 @@
 </main>
 
 <!-- BottomNavBar -->
-<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-4 pt-2 bottom-safe bg-surface-container-lowest rounded-t-xl shadow-lg">
-  <a href="#home" data-nav="home" class="nav-link flex flex-col items-center justify-center px-3 py-2">
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-2 pt-2 bottom-safe bg-surface-container-lowest rounded-t-xl shadow-lg">
+  <a href="#home" data-nav="home" class="nav-link flex flex-col items-center justify-center px-2 py-2">
     <span class="material-symbols-outlined">home</span>
     <span class="text-label-caps">Home</span>
   </a>
-  <a href="#diary" data-nav="diary" class="nav-link flex flex-col items-center justify-center px-3 py-2">
+  <a href="#diary" data-nav="diary" class="nav-link flex flex-col items-center justify-center px-2 py-2">
     <span class="material-symbols-outlined">restaurant</span>
     <span class="text-label-caps">Diario</span>
   </a>
-  <a href="#plan" data-nav="plan" class="nav-link flex flex-col items-center justify-center px-3 py-2">
+  <a href="#exercise" data-nav="exercise" class="nav-link flex flex-col items-center justify-center px-2 py-2">
+    <span class="material-symbols-outlined">directions_run</span>
+    <span class="text-label-caps">Esercizio</span>
+  </a>
+  <a href="#plan" data-nav="plan" class="nav-link flex flex-col items-center justify-center px-2 py-2">
     <span class="material-symbols-outlined">menu_book</span>
     <span class="text-label-caps">Piano</span>
   </a>
-  <a href="#health" data-nav="health" class="nav-link flex flex-col items-center justify-center px-3 py-2">
+  <a href="#health" data-nav="health" class="nav-link flex flex-col items-center justify-center px-2 py-2">
     <span class="material-symbols-outlined" style="font-variation-settings:'FILL' 1;">favorite</span>
     <span class="text-label-caps">Salute</span>
   </a>
