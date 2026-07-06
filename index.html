@@ -545,52 +545,108 @@
   <section id="view-exercise" class="view">
     <div class="mb-stack-md">
       <h2 class="font-serif text-headline-lg-mobile text-on-surface mb-1">Esercizio</h2>
-      <p class="text-on-surface-variant text-sm">Programma progressivo a basso impatto — costruito sul tuo quadro.</p>
+      <p class="text-on-surface-variant text-sm">Movimento e drenaggio — calibrati sul tuo quadro.</p>
     </div>
 
-    <!-- Fase corrente -->
-    <div class="bg-surface-container-lowest rounded-2xl p-5 soft-card mb-stack-md border-2 border-primary/20">
-      <div id="exercisePhaseHeader"></div>
-      <div class="flex items-center gap-2 mt-4 pt-3 border-t border-outline-variant/30">
-        <label class="text-xs text-on-surface-variant flex-1">
-          Fase:
-          <select id="exercisePhaseSelect" class="ml-1 bg-surface-container-low border border-outline-variant rounded-lg px-2 py-1 text-sm">
-            <option value="base">Base (sett 1-4)</option>
-            <option value="progression">Progressione (sett 5-8)</option>
-            <option value="maintenance">Mantenimento (9+)</option>
-          </select>
-        </label>
-        <button id="exerciseResetBtn" class="text-xs text-primary font-bold underline">Reset programma</button>
+    <!-- Tab switcher -->
+    <div class="flex gap-2 mb-stack-md p-1 bg-surface-container-low rounded-full">
+      <button data-tab="fitness" class="exerciseTab flex-1 py-2 px-4 rounded-full text-sm font-bold bg-primary text-on-primary transition-all">
+        <span class="material-symbols-outlined text-base align-middle mr-1">directions_run</span>Fitness
+      </button>
+      <button data-tab="drainage" class="exerciseTab flex-1 py-2 px-4 rounded-full text-sm font-bold text-on-surface-variant transition-all">
+        <span class="material-symbols-outlined text-base align-middle mr-1">spa</span>Drenaggio 28gg
+      </button>
+    </div>
+
+    <!-- ===== PANE FITNESS ===== -->
+    <div id="exerciseFitnessPane">
+      <!-- Fase corrente -->
+      <div class="bg-surface-container-lowest rounded-2xl p-5 soft-card mb-stack-md border-2 border-primary/20">
+        <div id="exercisePhaseHeader"></div>
+        <div class="flex items-center gap-2 mt-4 pt-3 border-t border-outline-variant/30">
+          <label class="text-xs text-on-surface-variant flex-1">
+            Fase:
+            <select id="exercisePhaseSelect" class="ml-1 bg-surface-container-low border border-outline-variant rounded-lg px-2 py-1 text-sm">
+              <option value="base">Base (sett 1-4)</option>
+              <option value="progression">Progressione (sett 5-8)</option>
+              <option value="maintenance">Mantenimento (9+)</option>
+            </select>
+          </label>
+          <button id="exerciseResetBtn" class="text-xs text-primary font-bold underline">Reset programma</button>
+        </div>
       </div>
-    </div>
 
-    <!-- Oggi -->
-    <div class="bg-surface-container-lowest rounded-xl p-5 soft-card mb-stack-md">
-      <div class="flex items-center gap-2 mb-3">
-        <span class="material-symbols-outlined text-primary">today</span>
-        <h3 class="font-serif text-title-md text-primary">Oggi</h3>
+      <!-- Oggi -->
+      <div class="bg-surface-container-lowest rounded-xl p-5 soft-card mb-stack-md">
+        <div class="flex items-center gap-2 mb-3">
+          <span class="material-symbols-outlined text-primary">today</span>
+          <h3 class="font-serif text-title-md text-primary">Oggi</h3>
+        </div>
+        <div id="exerciseToday" class="flex flex-col gap-2"></div>
       </div>
-      <div id="exerciseToday" class="flex flex-col gap-2"></div>
-    </div>
 
-    <!-- Settimana -->
-    <div class="bg-surface-container-lowest rounded-xl p-5 soft-card mb-stack-md">
-      <h3 class="font-serif text-title-md text-on-surface mb-3">Settimana tipo</h3>
-      <div id="exerciseWeek"></div>
-    </div>
-
-    <!-- Regole per Irida -->
-    <div class="bg-secondary-fixed rounded-xl p-5 soft-card mb-stack-md">
-      <div class="flex items-center gap-2 mb-3">
-        <span class="material-symbols-outlined text-on-secondary-container">info</span>
-        <h3 class="font-serif text-title-md text-on-secondary-container">Regole per te</h3>
+      <!-- Settimana -->
+      <div class="bg-surface-container-lowest rounded-xl p-5 soft-card mb-stack-md">
+        <h3 class="font-serif text-title-md text-on-surface mb-3">Settimana tipo</h3>
+        <div id="exerciseWeek"></div>
       </div>
-      <div id="exerciseRules" class="flex flex-col gap-2"></div>
+
+      <!-- Regole per Irida -->
+      <div class="bg-secondary-fixed rounded-xl p-5 soft-card mb-stack-md">
+        <div class="flex items-center gap-2 mb-3">
+          <span class="material-symbols-outlined text-on-secondary-container">info</span>
+          <h3 class="font-serif text-title-md text-on-secondary-container">Regole per te</h3>
+        </div>
+        <div id="exerciseRules" class="flex flex-col gap-2"></div>
+      </div>
+
+      <p class="text-xs text-on-surface-variant italic px-2 mb-stack-md">
+        Programma calibrato su tallone operato, ferro basso e artralgie. Non forzare mai — ascolta il corpo. In caso di dolore, fermati.
+      </p>
     </div>
 
-    <p class="text-xs text-on-surface-variant italic px-2 mb-stack-md">
-      Programma calibrato su tallone operato, ferro basso e artralgie. Non forzare mai — ascolta il corpo. In caso di dolore, fermati.
-    </p>
+    <!-- ===== PANE DRENAGGIO 28GG ===== -->
+    <div id="exerciseDrainagePane" class="hidden">
+      <!-- Avvertenze critiche -->
+      <div class="bg-error-container rounded-xl p-4 soft-card mb-stack-md border-2 border-error/40">
+        <div class="flex items-center gap-2 mb-3">
+          <span class="material-symbols-outlined text-error">warning</span>
+          <h3 class="font-serif text-title-md text-on-error-container">Attenzione per te</h3>
+        </div>
+        <div id="drainageWarnings" class="flex flex-col gap-2"></div>
+      </div>
+
+      <!-- Header progress -->
+      <div class="bg-surface-container-lowest rounded-2xl p-5 soft-card mb-stack-md border-2 border-primary/20">
+        <div id="drainageHeader"></div>
+        <div class="mt-4 pt-3 border-t border-outline-variant/30 text-right">
+          <button id="drainageResetBtn" class="text-xs text-primary font-bold underline">Ricomincia da giorno 1</button>
+        </div>
+      </div>
+
+      <!-- Routine di oggi -->
+      <div class="bg-surface-container-lowest rounded-xl p-5 soft-card mb-stack-md">
+        <div class="flex items-center gap-2 mb-3">
+          <span class="material-symbols-outlined text-primary">checklist</span>
+          <h3 class="font-serif text-title-md text-primary">Routine di oggi</h3>
+        </div>
+        <p class="text-xs text-on-surface-variant italic mb-3">Mattina a digiuno o sera prima di dormire. Acqua tiepida con limone prima di iniziare.</p>
+        <div id="drainageList"></div>
+      </div>
+
+      <!-- Consigli complementari -->
+      <div class="bg-surface-container-lowest rounded-xl p-5 soft-card mb-stack-md">
+        <div class="flex items-center gap-2 mb-3">
+          <span class="material-symbols-outlined text-tertiary">tips_and_updates</span>
+          <h3 class="font-serif text-title-md text-tertiary">Consigli complementari</h3>
+        </div>
+        <div id="drainageTips" class="flex flex-col gap-2"></div>
+      </div>
+
+      <p class="text-xs text-on-surface-variant italic px-2 mb-stack-md">
+        Se gonfiore aumenta o linfonodi inguinali gonfi: ferma tutto e senti il dermatologo (follow-up melanoma).
+      </p>
+    </div>
   </section>
 
   <!-- ===== HEALTH = analitica salute ===== -->

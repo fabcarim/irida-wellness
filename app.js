@@ -2,7 +2,7 @@
 // Storage: IndexedDB (sola Irida, su questo iPhone). Export JSON per backup.
 
 const DB_NAME = "irida-wellness";
-const DB_VERSION = 3;
+const DB_VERSION = 4;
 
 const STORES = {
   food:        "food",        // { id, ts, category, portion, note }
@@ -12,7 +12,8 @@ const STORES = {
   labs:        "labs",        // { id, ts, marker, value, unit }
   symptom:     "symptom",     // { id, ts, tag, intensity }
   supplements: "supplements", // { id (date:name), date, name, taken, ts }
-  exercise:    "exercise",    // { id (date), date, activityKey, duration, note, ts }
+  exercise:    "exercise",    // { id (date:key), date, activityKey, duration, note, ts }
+  drainage:    "drainage",    // { id (date:exId), date, exId, ts }
   config:      "config",      // { key, value }
 };
 
@@ -96,6 +97,80 @@ const EXERCISE_RULES = [
   { icon: "water_drop",    text: "Idratazione: bevi PRIMA, DURANTE e DOPO — non solo per la sete, i calcoli renali ringraziano." },
   { icon: "psychology",    text: "Autoimmunita (ANA+): con artralgie i giorni no sono normali. Meglio poco che niente." },
 ];
+
+// ---------------- Drenaggio linfatico 28 giorni ----------------
+
+// Avvertenze critiche specifiche per Irida (mostrate sempre in cima)
+const DRAINAGE_WARNINGS = [
+  { icon: "block",       text: "NON massaggiare/premere sul tallone sinistro (cicatrice melanoma). Piede sinistro: solo dorso." },
+  { icon: "warning",     text: "NON premere forte nella zona inguinale (follow-up linfonodi). Auto-massaggio gambe fermarsi a meta coscia." },
+  { icon: "touch_app",   text: "Pressione LEGGERA sempre — come accarezzare un gatto. Il sistema linfatico risponde alla delicatezza." },
+  { icon: "emergency",   text: "Se noti linfonodi inguinali gonfi o gonfiore che AUMENTA, ferma tutto e senti il dermatologo." },
+];
+
+// Routine base (5 esercizi, ogni giorno, 15 min)
+const DRAINAGE_BASE = [
+  { id: "R1", label: "Respirazione diaframmatica",  duration: 3, icon: "air",             note: "Sdraiata, mano su pancia. Inspira 4s, tieni 2s, espira 6s. x8-10. Il diaframma e la pompa linfatica principale." },
+  { id: "R2", label: "Attivazione collo/clavicola", duration: 2, icon: "self_improvement",note: "Rotazioni testa lente x5, spalle su/giu x10, cerchi leggeri nella fossetta sopra clavicola x10." },
+  { id: "R3", label: "Auto-massaggio braccia",       duration: 2, icon: "back_hand",       note: "Accarezza dal polso all'ascella x10 per braccio + cerchi nell'incavo ascella x10." },
+  { id: "R4", label: "Auto-massaggio gambe",         duration: 3, icon: "airline_seat_legroom_normal", note: "Caviglia → ginocchio x10, cerchi dietro ginocchio x10, ginocchio → meta coscia x10. STOP prima dell'inguine. Piede sx: solo dorso." },
+  { id: "R5", label: "Gambe al muro",                duration: 5, icon: "vertical_align_top", note: "Sedere al muro, gambe in alto. Dopo 2 min flex caviglie x20, dopo 4 min forbici x10." },
+];
+
+// 4 settimane: esercizi extra che si aggiungono alla base
+const DRAINAGE_WEEKS = [
+  {
+    n: 1, label: "Settimana 1 — Fondamenta", totalMin: 25,
+    extras: [
+      { id: "W1A", label: "Marcia sul posto",          duration: 3, icon: "directions_walk", note: "Ginocchia alte alternate, lento e ritmico. Braccia oscillano." },
+      { id: "W1B", label: "Cerchi con le caviglie",    duration: 2, icon: "sync",            note: "Seduta, ruota il piede 10 orari + 10 antiorari. Sx: fermati se il tallone tira." },
+      { id: "W1C", label: "Torsione spinale sdraiata", duration: 3, icon: "swap_horiz",      note: "Sdraiata, braccia a croce. Ginocchia insieme cadono a dx 30s, a sx 30s. x3 per lato." },
+      { id: "W1D", label: "Dry brushing",              duration: 2, icon: "cleaning_services",note: "Spazzola setole naturali su pelle ASCIUTTA, sempre verso il cuore. Piede sx: solo dorso. Pancia in senso orario." },
+    ],
+  },
+  {
+    n: 2, label: "Settimana 2 — Intensificazione", totalMin: 30,
+    extras: [
+      { id: "W2E", label: "Ponte glutei con respiro", duration: 3, icon: "flip_camera_android", note: "Sdraiata, ginocchia piegate. Inspira sollevando bacino (tieni 3s), espira scendendo vertebra per vertebra. x12." },
+      { id: "W2F", label: "Farfalla",                 duration: 2, icon: "flutter_dash",        note: "Seduta, piante piedi unite. Ginocchia su/giu x30, poi busto avanti dolcemente 30s. Apre l'inguine." },
+      { id: "W2G", label: "Cat-Cow",                  duration: 2, icon: "pets",                note: "Quattro zampe. Inspira inarcando (mucca), espira arrotondando (gatto). Lento, x10." },
+    ],
+  },
+  {
+    n: 3, label: "Settimana 3 — Consolidamento", totalMin: 35,
+    extras: [
+      { id: "W3H", label: "Squat leggero con respiro", duration: 3, icon: "airline_seat_recline_normal", note: "Piedi larghezza spalle. Inspira scendendo, espira risalendo. x12 x2 serie. Sx dolorante: talloni su asciugamano." },
+      { id: "W3I", label: "Massaggio addominale",      duration: 3, icon: "bubble_chart",       note: "Sdraiata, mani sovrapposte. Cerchi ORARI x20 grandi + x20 piccoli. Poi 3 dita sotto costole dx (fegato) x5, sx (milza) x5." },
+      { id: "W3J", label: "Bicicletta da sdraiata",    duration: 2, icon: "pedal_bike",         note: "Sdraiata, mani dietro nuca. Pedala lento 20 avanti + 20 indietro. No impatto sul tallone." },
+    ],
+  },
+  {
+    n: 4, label: "Settimana 4 — Routine completa", totalMin: 30,
+    extras: [], // consolidamento: si fa tutto A-J insieme (extras 1-3 combinati)
+  },
+];
+
+// Consigli complementari
+const DRAINAGE_TIPS = {
+  food: [
+    "Acqua tiepida + limone: prima di ogni sessione e al mattino",
+    "Alimenti drenanti: cetrioli, finocchio, sedano, ananas, zenzero, prezzemolo",
+    "Tisane: tarassaco, betulla, ortica — 1-2 tazze/die (LONTANO dai pasti per non bloccare il ferro)",
+    "Riduci sale (sodio → ritenzione) e zuccheri raffinati (infiammazione → blocco linfatico)",
+  ],
+  habits: [
+    "Doccia finale: getto freddo su gambe 30s (tonifica linfa)",
+    "Non stare seduta > 1h: alzati e cammina 2 min",
+    "Dormi con cuscino sotto le caviglie",
+    "Vestiti comodi, non stretti in vita/inguine",
+  ],
+  expect: [
+    { days: "1-5", text: "Possibile aumento diuresi (normale, sta drenando)" },
+    { days: "5-10", text: "Gambe meno pesanti, meno gonfiore caviglie" },
+    { days: "10-20", text: "Pancia meno gonfia, piu energia" },
+    { days: "20-28", text: "Abitudine consolidata, differenza visibile" },
+  ],
+};
 
 // Esami da fare (mancanti al quadro clinico)
 const EXAMS_TODO = [
@@ -232,6 +307,7 @@ function openDB() {
           if (name === "config") { keyPath = "key"; autoIncrement = false; }
           if (name === "supplements") { keyPath = "id"; autoIncrement = false; } // id = "date:name"
           if (name === "exercise") { keyPath = "id"; autoIncrement = false; } // id = "date:activityKey"
+          if (name === "drainage") { keyPath = "id"; autoIncrement = false; } // id = "date:exId"
           const s = d.createObjectStore(name, { keyPath, autoIncrement });
           if (name !== "config") {
             try { s.createIndex("ts", "ts"); } catch (e) {}
@@ -1588,6 +1664,22 @@ async function computeReminders() {
     out.push({ icon: "wb_sunny", text: `Drox ${when} — assumi con un cucchiaio di EVO o pesce/uova per assorbire meglio la Vit D.` });
   }
 
+  // Drenaggio linfatico: reminder se giorno programma attivo e nessun esercizio fatto oggi
+  const drainStart = await getConfig("drainageStartDate", null);
+  if (drainStart) {
+    const dayN = drainageDayNumber(drainStart);
+    if (dayN <= 28) {
+      const allDrain = await getAll(STORES.drainage);
+      const todayDrain = allDrain.filter((d) => d.date === today);
+      const isMorning = hour >= 7 && hour < 10;
+      const isEvening = hour >= 20 && hour < 23;
+      if (todayDrain.length === 0 && (isMorning || isEvening)) {
+        const when = isMorning ? "Mattina a digiuno" : "Prima di dormire";
+        out.push({ icon: "spa", text: `${when} = ottimo momento per il drenaggio (giorno ${dayN}/28). 15 min routine base + acqua tiepida con limone.` });
+      }
+    }
+  }
+
   // Acqua poca per l'orario corrente (target proporzionale)
   const goal = await getConfig("waterGoal", 8);
   const waters = await getAll(STORES.water);
@@ -1796,6 +1888,28 @@ async function buildMarkdownExport() {
       md += `| ${m} | **${last.value}${last.unit ? " " + last.unit : ""}** | ${rangeText} | ${statusText} | ${history} |\n`;
     }
     md += `\n`;
+  }
+
+  // Drenaggio linfatico — ultimi 14 giorni
+  const drainStart = await getConfig("drainageStartDate", null);
+  if (drainStart) {
+    const drainAll = await getAll(STORES.drainage);
+    const last14d = Date.now() - 14 * 86400000;
+    const recent = drainAll.filter((d) => d.ts >= last14d);
+    if (recent.length) {
+      const dayN = drainageDayNumber(drainStart);
+      md += `## Drenaggio linfatico 28gg\n\n`;
+      md += `Giorno ${dayN}/28 · settimana ${drainageWeekNumber(dayN)}\n\n`;
+      const byDate = {};
+      for (const d of recent) {
+        if (!byDate[d.date]) byDate[d.date] = 0;
+        byDate[d.date]++;
+      }
+      const days = Object.keys(byDate).sort();
+      md += `Aderenza ultimi 14 giorni:\n`;
+      for (const d of days) md += `- ${d}: ${byDate[d]} esercizi\n`;
+      md += `\n`;
+    }
   }
 
   md += `## Richiesta per Claude\n\n`;
@@ -2031,11 +2145,227 @@ function bindExerciseEvents() {
   }
 }
 
+// ---------------- Drenaggio linfatico — logica ----------------
+
+function drainageDayNumber(startDateIso) {
+  if (!startDateIso) return 1;
+  const start = startOfDay(new Date(startDateIso));
+  const today = startOfDay(new Date());
+  const day = Math.floor((today - start) / 86400000) + 1;
+  return Math.max(1, day);
+}
+
+function drainageWeekNumber(dayN) {
+  if (dayN <= 7) return 1;
+  if (dayN <= 14) return 2;
+  if (dayN <= 21) return 3;
+  if (dayN <= 28) return 4;
+  return 4; // mantenimento oltre il 28
+}
+
+function drainageExercisesForDay(dayN) {
+  // Base sempre + extras cumulativi fino alla settimana corrente
+  const wk = drainageWeekNumber(dayN);
+  const extras = [];
+  for (let i = 0; i < wk; i++) {
+    for (const ex of (DRAINAGE_WEEKS[i]?.extras || [])) extras.push(ex);
+  }
+  return { base: DRAINAGE_BASE, extras, week: wk };
+}
+
+async function isDrainageDone(dateStr, exId) {
+  return new Promise((res) => {
+    const r = tx(STORES.drainage).get(`${dateStr}:${exId}`);
+    r.onsuccess = () => res(!!r.result);
+    r.onerror = () => res(false);
+  });
+}
+
+async function toggleDrainage(dateStr, exId) {
+  const id = `${dateStr}:${exId}`;
+  const existing = await new Promise((res) => {
+    const r = tx(STORES.drainage).get(id);
+    r.onsuccess = () => res(r.result);
+    r.onerror = () => res(null);
+  });
+  if (existing) {
+    await new Promise((res) => {
+      const r = tx(STORES.drainage, "readwrite").delete(id);
+      r.onsuccess = res;
+    });
+    return false;
+  }
+  await put(STORES.drainage, { id, date: dateStr, exId, ts: Date.now() });
+  return true;
+}
+
+async function drainageStreak() {
+  // Giorni consecutivi con ALMENO 1 esercizio drenaggio registrato
+  const all = await getAll(STORES.drainage);
+  const done = new Set(all.map((e) => e.date));
+  let streak = 0;
+  const today = startOfDay(new Date());
+  let cursor = new Date(today);
+  if (!done.has(dateKey(cursor))) cursor.setDate(cursor.getDate() - 1);
+  while (done.has(dateKey(cursor))) {
+    streak++;
+    cursor.setDate(cursor.getDate() - 1);
+  }
+  return streak;
+}
+
+async function setDrainageStartDateIfEmpty() {
+  const existing = await getConfig("drainageStartDate", null);
+  if (!existing) await setConfig("drainageStartDate", dateKey(new Date()));
+}
+
+async function renderDrainage() {
+  const startDate = await getConfig("drainageStartDate", null);
+  const dayN = drainageDayNumber(startDate);
+  const { base, extras, week } = drainageExercisesForDay(dayN);
+  const today = dateKey(new Date());
+  const streak = await drainageStreak();
+  const all = base.concat(extras);
+  const doneStates = await Promise.all(all.map((ex) => isDrainageDone(today, ex.id)));
+  const doneCount = doneStates.filter(Boolean).length;
+  const totalMin = all.reduce((s, e) => s + e.duration, 0);
+
+  // Header progress
+  const headerEl = document.getElementById("drainageHeader");
+  if (headerEl) {
+    const dayLabel = dayN > 28 ? `Mantenimento · giorno ${dayN}` : `Giorno ${dayN} di 28`;
+    const weekLabel = dayN > 28 ? "Routine completa" : DRAINAGE_WEEKS[week - 1].label;
+    const pct = Math.min(100, Math.round((doneCount / all.length) * 100));
+    headerEl.innerHTML = `
+      <div class="flex items-end justify-between mb-2">
+        <div>
+          <p class="text-label-caps uppercase text-on-surface-variant">${dayLabel}</p>
+          <p class="font-serif text-title-md text-primary">${weekLabel}</p>
+        </div>
+        ${streak > 0 ? `<div class="text-right">
+          <p class="font-serif text-2xl text-tertiary leading-none">🔥 ${streak}</p>
+          <p class="text-[10px] text-on-surface-variant uppercase tracking-wider">gg di fila</p>
+        </div>` : ""}
+      </div>
+      <div class="h-3 rounded-full bg-surface-container-high overflow-hidden mb-2">
+        <div class="h-full transition-all ${pct === 100 ? 'bg-tertiary' : 'bg-primary'}" style="width:${pct}%"></div>
+      </div>
+      <p class="text-xs text-on-surface-variant">${doneCount}/${all.length} esercizi oggi · ~${totalMin} min totali</p>
+    `;
+  }
+
+  // Avvertenze
+  const warnEl = document.getElementById("drainageWarnings");
+  if (warnEl) {
+    warnEl.innerHTML = DRAINAGE_WARNINGS.map((w) => `
+      <div class="flex items-start gap-2">
+        <span class="material-symbols-outlined text-error text-base mt-0.5">${w.icon}</span>
+        <p class="text-xs text-on-error-container flex-1">${w.text}</p>
+      </div>`).join("");
+  }
+
+  // Routine base + extras (checklist)
+  function renderSection(list, title, iconColor) {
+    return `
+      <div class="mb-4">
+        <p class="text-label-caps uppercase text-on-surface-variant mb-2">${title}</p>
+        <div class="flex flex-col gap-2">
+          ${list.map((ex, i) => {
+            const isBase = base.includes(ex);
+            const idx = isBase ? base.indexOf(ex) : base.length + extras.indexOf(ex);
+            const done = doneStates[idx];
+            return `<button data-drainex="${ex.id}" class="drainageBtn w-full flex items-start gap-3 p-3 rounded-lg ${done ? 'bg-tertiary/15 border-2 border-tertiary' : 'bg-surface-container-low border-2 border-transparent'} active:scale-[0.98] transition-all text-left">
+              <span class="material-symbols-outlined ${done ? 'text-tertiary' : iconColor} text-2xl mt-0.5" style="font-variation-settings:'FILL' ${done ? 1 : 0};">${done ? 'check_circle' : ex.icon}</span>
+              <div class="flex-1 min-w-0">
+                <div class="flex items-baseline justify-between gap-2">
+                  <p class="font-semibold text-on-surface text-sm ${done ? 'line-through opacity-70' : ''}">${ex.label}</p>
+                  <span class="text-xs font-bold text-on-surface-variant whitespace-nowrap">${ex.duration} min</span>
+                </div>
+                <p class="text-xs text-on-surface-variant mt-1 leading-relaxed">${ex.note}</p>
+              </div>
+            </button>`;
+          }).join("")}
+        </div>
+      </div>`;
+  }
+
+  const listEl = document.getElementById("drainageList");
+  if (listEl) {
+    listEl.innerHTML = renderSection(base, "Routine base · 15 min · ogni giorno", "text-primary")
+      + (extras.length ? renderSection(extras, `Extra settimana ${week}`, "text-secondary") : "");
+    listEl.querySelectorAll(".drainageBtn").forEach((btn) => {
+      btn.addEventListener("click", async () => {
+        await toggleDrainage(today, btn.dataset.drainex);
+        renderDrainage();
+        renderReminders();
+      });
+    });
+  }
+
+  // Consigli complementari
+  const tipsEl = document.getElementById("drainageTips");
+  if (tipsEl) {
+    tipsEl.innerHTML = `
+      <details class="rounded-lg bg-surface-container-low p-3">
+        <summary class="font-semibold text-sm text-on-surface cursor-pointer flex items-center gap-2">
+          <span class="material-symbols-outlined text-tertiary text-base">restaurant</span> Alimentazione pro-drenaggio
+        </summary>
+        <ul class="mt-2 space-y-1 text-xs text-on-surface-variant">
+          ${DRAINAGE_TIPS.food.map((t) => `<li>• ${t}</li>`).join("")}
+        </ul>
+      </details>
+      <details class="rounded-lg bg-surface-container-low p-3">
+        <summary class="font-semibold text-sm text-on-surface cursor-pointer flex items-center gap-2">
+          <span class="material-symbols-outlined text-tertiary text-base">bedtime</span> Abitudini quotidiane
+        </summary>
+        <ul class="mt-2 space-y-1 text-xs text-on-surface-variant">
+          ${DRAINAGE_TIPS.habits.map((t) => `<li>• ${t}</li>`).join("")}
+        </ul>
+      </details>
+      <details class="rounded-lg bg-surface-container-low p-3">
+        <summary class="font-semibold text-sm text-on-surface cursor-pointer flex items-center gap-2">
+          <span class="material-symbols-outlined text-tertiary text-base">timeline</span> Cosa aspettarti
+        </summary>
+        <ul class="mt-2 space-y-1.5 text-xs text-on-surface-variant">
+          ${DRAINAGE_TIPS.expect.map((e) => `<li><strong class="text-primary">Giorni ${e.days}:</strong> ${e.text}</li>`).join("")}
+        </ul>
+      </details>
+    `;
+  }
+}
+
+function bindDrainageEvents() {
+  const resetBtn = document.getElementById("drainageResetBtn");
+  if (resetBtn) {
+    resetBtn.addEventListener("click", async () => {
+      if (confirm("Ricomincia il programma 28 giorni da oggi (giorno 1)?")) {
+        await setConfig("drainageStartDate", dateKey(new Date()));
+        renderDrainage();
+      }
+    });
+  }
+  // Tab switcher Fitness / Drenaggio
+  document.querySelectorAll(".exerciseTab").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const t = btn.dataset.tab;
+      document.querySelectorAll(".exerciseTab").forEach((b) => {
+        b.classList.toggle("bg-primary", b.dataset.tab === t);
+        b.classList.toggle("text-on-primary", b.dataset.tab === t);
+        b.classList.toggle("text-on-surface-variant", b.dataset.tab !== t);
+      });
+      document.getElementById("exerciseFitnessPane").classList.toggle("hidden", t !== "fitness");
+      document.getElementById("exerciseDrainagePane").classList.toggle("hidden", t !== "drainage");
+      if (t === "drainage") renderDrainage();
+    });
+  });
+}
+
 // ---------------- Init ----------------
 
 openDB().then(async () => {
   await maybeShowSetup();
   await setExerciseStartDateIfEmpty();
+  await setDrainageStartDateIfEmpty();
   document.getElementById("setupSaveBtn")?.addEventListener("click", saveSetup);
   renderCategoryChips();
   renderSymptomChips();
@@ -2043,6 +2373,7 @@ openDB().then(async () => {
   bindHealthEvents();
   bindExportEvents();
   bindExerciseEvents();
+  bindDrainageEvents();
   route();
   window.addEventListener("hashchange", () => {
     if (location.hash === "#diary") renderDiary();

@@ -1,6 +1,6 @@
 // Service worker: network-first per i file dell'app (cosi le modifiche si vedono subito),
 // cache-first solo per CDN esterni (font/tailwind).
-const CACHE = "irida-wellness-v4";
+const CACHE = "irida-wellness-v5";
 const ASSETS = [
   "./",
   "./index.html",
